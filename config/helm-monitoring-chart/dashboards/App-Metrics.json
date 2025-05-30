@@ -1,0 +1,1297 @@
+{
+    "id": null,
+    "uid": "App-All-services-dashboard",
+    "title": "Application Metrics",
+    "tags": [
+        "application",
+        "metrics",
+        "dashboard",
+        "services",
+        "prometheus"
+    ],
+    "timezone": "browser",
+    "schemaVersion": 26,
+    "version": 1,
+    "refresh": "5s",
+    "panels": [
+        {
+            "type": "row",
+            "title": "💚[K8s Services Health] - All Service Status",
+            "id": 1,
+            "collapsed": true,
+            "gridPos": {
+                "x": 0,
+                "y": 0,
+                "w": 24,
+                "h": 1
+            },
+            "panels": [
+                {
+                    "type": "stat",
+                    "title": "Authentication Service Status",
+                    "targets": [
+                        {
+                            "expr": "count(up{job='authentication-service'}) OR on() vector(0)",
+                            "interval": "1m",
+                            "legendFormat": "Authentication Service Status",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "valueFontSize": "80%",
+                    "gauge": {
+                        "minValue": 0,
+                        "maxValue": 1
+                    },
+                    "id": 1,
+                    "gridPos": {
+                        "x": 0,
+                        "y": 0,
+                        "w": 4,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "stat",
+                    "title": "Broker Service Status",
+                    "targets": [
+                        {
+                            "expr": "count(up{job='broker-service'}) OR on() vector(0)",
+                            "interval": "1m",
+                            "legendFormat": "Broker Service Status",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "valueFontSize": "80%",
+                    "gauge": {
+                        "minValue": 0,
+                        "maxValue": 1
+                    },
+                    "id": 2,
+                    "gridPos": {
+                        "x": 4,
+                        "y": 0,
+                        "w": 4,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "stat",
+                    "title": "Front-end Service Status",
+                    "targets": [
+                        {
+                            "expr": "count(up{job='front-end'}) OR on() vector(0)",
+                            "interval": "1m",
+                            "legendFormat": "Front-end Service Status",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "valueFontSize": "80%",
+                    "gauge": {
+                        "minValue": 0,
+                        "maxValue": 1
+                    },
+                    "id": 3,
+                    "gridPos": {
+                        "x": 8,
+                        "y": 0,
+                        "w": 4,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "stat",
+                    "title": "Listener Service Status",
+                    "targets": [
+                        {
+                            "expr": "count(up{job='listener-service'}) OR on() vector(0)",
+                            "interval": "1m",
+                            "legendFormat": "Listener Service Status",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "valueFontSize": "80%",
+                    "gauge": {
+                        "minValue": 0,
+                        "maxValue": 1
+                    },
+                    "id": 4,
+                    "gridPos": {
+                        "x": 12,
+                        "y": 0,
+                        "w": 4,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "stat",
+                    "title": "Logger Service Status",
+                    "targets": [
+                        {
+                            "expr": "count(up{job='logger-service'}) OR on() vector(0)",
+                            "interval": "1m",
+                            "legendFormat": "Logger Service Status",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "valueFontSize": "80%",
+                    "gauge": {
+                        "minValue": 0,
+                        "maxValue": 1
+                    },
+                    "id": 5,
+                    "gridPos": {
+                        "x": 16,
+                        "y": 0,
+                        "w": 4,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "stat",
+                    "title": "Mailer Service Status",
+                    "targets": [
+                        {
+                            "expr": "count(up{job='mailer-service'}) OR on() vector(0)",
+                            "interval": "1m",
+                            "legendFormat": "Mailer Service Status",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "valueFontSize": "80%",
+                    "gauge": {
+                        "minValue": 0,
+                        "maxValue": 1
+                    },
+                    "id": 6,
+                    "gridPos": {
+                        "x": 20,
+                        "y": 0,
+                        "w": 4,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "stat",
+                    "title": "Database Status (MongoDB)",
+                    "targets": [
+                        {
+                            "expr": "count(up{job='mongo'}) OR on() vector(0)",
+                            "interval": "1m",
+                            "legendFormat": "Database Status (MongoDB)",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "valueFontSize": "80%",
+                    "gauge": {
+                        "minValue": 0,
+                        "maxValue": 1
+                    },
+                    "id": 7,
+                    "gridPos": {
+                        "x": 0,
+                        "y": 6,
+                        "w": 4,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "stat",
+                    "title": "Database Status (PostgreSQL)",
+                    "targets": [
+                        {
+                            "expr": "count(up{job='postgres'}) OR on() vector(0)",
+                            "interval": "1m",
+                            "legendFormat": "Database Status (PostgreSQL)",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "valueFontSize": "80%",
+                    "gauge": {
+                        "minValue": 0,
+                        "maxValue": 1
+                    },
+                    "id": 8,
+                    "gridPos": {
+                        "x": 4,
+                        "y": 6,
+                        "w": 4,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "stat",
+                    "title": "Message Broker Status (RabbitMQ)",
+                    "targets": [
+                        {
+                            "expr": "count(up{job='rabbitmq'}) OR on() vector(0)",
+                            "interval": "1m",
+                            "legendFormat": "Message Broker Status (RabbitMQ)",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "valueFontSize": "80%",
+                    "gauge": {
+                        "minValue": 0,
+                        "maxValue": 1
+                    },
+                    "id": 9,
+                    "gridPos": {
+                        "x": 8,
+                        "y": 6,
+                        "w": 4,
+                        "h": 6
+                    }
+                }
+            ]
+        },
+        {
+            "type": "row",
+            "title": "[K8s Workloads] - Authentication Service",
+            "id": 2,
+            "collapsed": true,
+            "gridPos": {
+                "x": 0,
+                "y": 1,
+                "w": 24,
+                "h": 1
+            },
+            "panels": [
+                {
+                    "type": "graph",
+                    "title": "Total Requests",
+                    "targets": [
+                        {
+                            "expr": "sum by(method, endpoint) (rate(auth_service_request_count[1m]))",
+                            "legendFormat": "{{method}} {{endpoint}}",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "id": 1,
+                    "gridPos": {
+                        "x": 0,
+                        "y": 0,
+                        "w": 12,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "graph",
+                    "title": "Request Latency",
+                    "targets": [
+                        {
+                            "expr": "histogram_quantile(0.95, sum(rate(auth_service_request_latency_seconds_bucket[1m])) by (le, method, endpoint))",
+                            "legendFormat": "p95 {{method}} {{endpoint}}",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "id": 2,
+                    "gridPos": {
+                        "x": 12,
+                        "y": 0,
+                        "w": 12,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "graph",
+                    "title": "Error Count",
+                    "targets": [
+                        {
+                            "expr": "sum by(method, endpoint) (rate(auth_service_error_count[1m]))",
+                            "legendFormat": "{{method}} {{endpoint}}",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "id": 3,
+                    "gridPos": {
+                        "x": 0,
+                        "y": 6,
+                        "w": 12,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "stat",
+                    "title": "Container Restarts",
+                    "targets": [
+                        {
+                            "expr": "increase(kube_pod_container_status_restarts_total{container=\"authentication-service\"}[1m])",
+                            "legendFormat": "Restarts",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "valueFontSize": "80%",
+                    "id": 4,
+                    "gridPos": {
+                        "x": 12,
+                        "y": 6,
+                        "w": 12,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "graph",
+                    "title": "Active Users (Successful Authentications)",
+                    "targets": [
+                        {
+                            "expr": "increase(auth_service_request_count{method='POST'}[1m])",
+                            "interval": "1m",
+                            "legendFormat": "Successful Authentications",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "xaxis": {
+                        "mode": "time",
+                        "show": true
+                    },
+                    "yaxes": [
+                        {
+                            "format": "short",
+                            "label": "Active Users",
+                            "show": true
+                        },
+                        {
+                            "show": false
+                        }
+                    ],
+                    "gridPos": {
+                        "x": 0,
+                        "y": 12,
+                        "w": 12,
+                        "h": 6
+                    },
+                    "id": 5
+                },
+                {
+                    "type": "stat",
+                    "title": "Database Connection Status (PostgreSQL)",
+                    "targets": [
+                        {
+                            "expr": "count(up{job='postgres'}) OR on() vector(0)",
+                            "interval": "1m",
+                            "legendFormat": "Postgres Connection Status",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "valueFontSize": "80%",
+                    "gauge": {
+                        "minValue": 0,
+                        "maxValue": 1
+                    },
+                    "id": 6,
+                    "gridPos": {
+                        "x": 12,
+                        "y": 12,
+                        "w": 12,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "stat",
+                    "title": "Database Connection Status (MongoDB)",
+                    "targets": [
+                        {
+                            "expr": "count(up{job='mongo'}) OR on() vector(0)",
+                            "interval": "1m",
+                            "legendFormat": "MongoDB Connection Status",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "valueFontSize": "80%",
+                    "gauge": {
+                        "minValue": 0,
+                        "maxValue": 1
+                    },
+                    "id": 7,
+                    "gridPos": {
+                        "x": 12,
+                        "y": 18,
+                        "w": 12,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "stat",
+                    "title": "CPU Usage",
+                    "targets": [
+                        {
+                            "expr": "rate(container_cpu_usage_seconds_total{container=\"authentication-service\"}[1m])",
+                            "legendFormat": "CPU Usage",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "valueFontSize": "80%",
+                    "gauge": {
+                        "minValue": 0,
+                        "maxValue": 100
+                    },
+                    "id": 8,
+                    "gridPos": {
+                        "x": 0,
+                        "y": 18,
+                        "w": 12,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "stat",
+                    "title": "Memory Usage",
+                    "targets": [
+                        {
+                            "expr": "(container_memory_working_set_bytes{container=\"authentication-service\"}) / 1024 / 1024",
+                            "legendFormat": "Memory Usage",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "valueFontSize": "80%",
+                    "gauge": {
+                        "minValue": 0,
+                        "maxValue": 100
+                    },
+                    "id": 9,
+                    "gridPos": {
+                        "x": 0,
+                        "y": 24,
+                        "w": 12,
+                        "h": 6
+                    }
+                }
+            ]
+        },
+        {
+            "type": "row",
+            "title": "[K8s Workloads] - Broker Service",
+            "id": 3,
+            "collapsed": true,
+            "gridPos": {
+                "x": 0,
+                "y": 2,
+                "w": 24,
+                "h": 1
+            },
+            "panels": [
+                {
+                    "type": "graph",
+                    "title": "Total Requests Processed",
+                    "targets": [
+                        {
+                            "expr": "sum(rate(broker_requests_total[1m]))",
+                            "legendFormat": "Total Requests",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "id": 1,
+                    "gridPos": {
+                        "x": 0,
+                        "y": 0,
+                        "w": 12,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "graph",
+                    "title": "Request Latency",
+                    "targets": [
+                        {
+                            "expr": "histogram_quantile(0.95, sum(rate(broker_request_latency_seconds_bucket[1m])) by (le))",
+                            "legendFormat": "p95 Latency",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "id": 2,
+                    "gridPos": {
+                        "x": 12,
+                        "y": 0,
+                        "w": 12,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "graph",
+                    "title": "Error Count",
+                    "targets": [
+                        {
+                            "expr": "sum(rate(broker_request_errors_total[1m]))",
+                            "legendFormat": "Errors",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "id": 3,
+                    "gridPos": {
+                        "x": 0,
+                        "y": 6,
+                        "w": 12,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "graph",
+                    "title": "RabbitMQ Failures",
+                    "targets": [
+                        {
+                            "expr": "sum(rate(broker_rabbitmq_failures_total[1m]))",
+                            "legendFormat": "RabbitMQ Failures",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "id": 4,
+                    "gridPos": {
+                        "x": 12,
+                        "y": 6,
+                        "w": 12,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "graph",
+                    "title": "gRPC & RPC Failures",
+                    "targets": [
+                        {
+                            "expr": "sum(rate(broker_grpc_failures_total[1m]) + rate(broker_rpc_failures_total[1m]))",
+                            "legendFormat": "gRPC & RPC Failures",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "id": 5,
+                    "gridPos": {
+                        "x": 0,
+                        "y": 12,
+                        "w": 12,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "stat",
+                    "title": "Container Restarts",
+                    "targets": [
+                        {
+                            "expr": "increase(kube_pod_container_status_restarts_total{container=\"broker-service\"}[1m])",
+                            "legendFormat": "Restarts",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "valueFontSize": "80%",
+                    "id": 6,
+                    "gridPos": {
+                        "x": 12,
+                        "y": 12,
+                        "w": 12,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "stat",
+                    "title": "CPU Usage",
+                    "targets": [
+                        {
+                            "expr": "rate(container_cpu_usage_seconds_total{container=\"broker-service\"}[1m])",
+                            "legendFormat": "CPU Usage",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "valueFontSize": "80%",
+                    "gauge": {
+                        "minValue": 0,
+                        "maxValue": 100
+                    },
+                    "id": 7,
+                    "gridPos": {
+                        "x": 0,
+                        "y": 18,
+                        "w": 12,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "stat",
+                    "title": "Memory Usage",
+                    "targets": [
+                        {
+                            "expr": "(container_memory_working_set_bytes{container=\"broker-service\"}) / 1024 / 1024",
+                            "legendFormat": "Memory Usage MB",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "valueFontSize": "80%",
+                    "gauge": {
+                        "minValue": 0,
+                        "maxValue": 100
+                    },
+                    "id": 8,
+                    "gridPos": {
+                        "x": 12,
+                        "y": 18,
+                        "w": 12,
+                        "h": 6
+                    }
+                }
+            ]
+        },
+        {
+            "type": "row",
+            "title": "[K8s Workloads] - Front-end Service",
+            "id": 4,
+            "collapsed": true,
+            "gridPos": {
+                "x": 0,
+                "y": 3,
+                "w": 24,
+                "h": 1
+            },
+            "panels": [
+                {
+                    "type": "graph",
+                    "title": "Total Requests",
+                    "targets": [
+                        {
+                            "expr": "sum by(method, path) (rate(http_requests_total[1m]))",
+                            "legendFormat": "{{method}} | {{path}}",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "id": 1,
+                    "gridPos": {
+                        "x": 0,
+                        "y": 0,
+                        "w": 12,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "graph",
+                    "title": "Request Latency (95th percentile)",
+                    "targets": [
+                        {
+                            "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[1m])) by (le, method, path))",
+                            "legendFormat": "p95 | {{method}} | {{path}}",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "id": 2,
+                    "gridPos": {
+                        "x": 12,
+                        "y": 0,
+                        "w": 12,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "graph",
+                    "title": "Request Status Code Distribution",
+                    "targets": [
+                        {
+                            "expr": "sum by(status) (rate(http_requests_total[1m]))",
+                            "legendFormat": "Status Code {{status}}",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "id": 3,
+                    "gridPos": {
+                        "x": 0,
+                        "y": 6,
+                        "w": 12,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "stat",
+                    "title": "Container Restarts",
+                    "targets": [
+                        {
+                            "expr": "increase(kube_pod_container_status_restarts_total{container=\"front-end\"}[1m])",
+                            "legendFormat": "Restarts",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "valueFontSize": "80%",
+                    "id": 4,
+                    "gridPos": {
+                        "x": 12,
+                        "y": 6,
+                        "w": 12,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "graph",
+                    "title": "Request Size Distribution",
+                    "targets": [
+                        {
+                            "expr": "histogram_quantile(0.90, sum(rate(http_request_size_bytes_bucket[1m])) by (le, method, path))",
+                            "legendFormat": "p90 | {{method}} | {{path}}",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "id": 5,
+                    "gridPos": {
+                        "x": 0,
+                        "y": 12,
+                        "w": 12,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "graph",
+                    "title": "Response Size Distribution",
+                    "targets": [
+                        {
+                            "expr": "histogram_quantile(0.90, sum(rate(http_response_size_bytes_bucket[1m])) by (le, method, path))",
+                            "legendFormat": "p90 | {{method}} | {{path}}",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "id": 6,
+                    "gridPos": {
+                        "x": 12,
+                        "y": 12,
+                        "w": 12,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "stat",
+                    "title": "CPU Usage",
+                    "targets": [
+                        {
+                            "expr": "rate(container_cpu_usage_seconds_total{container=\"front-end\"}[1m])",
+                            "legendFormat": "CPU Usage",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "valueFontSize": "80%",
+                    "id": 7,
+                    "gridPos": {
+                        "x": 0,
+                        "y": 18,
+                        "w": 12,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "stat",
+                    "title": "Memory Usage",
+                    "targets": [
+                        {
+                            "expr": "(container_memory_working_set_bytes{container=\"front-end\"}) / 1024 / 1024",
+                            "legendFormat": "Memory Usage",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "valueFontSize": "80%",
+                    "id": 8,
+                    "gridPos": {
+                        "x": 12,
+                        "y": 18,
+                        "w": 12,
+                        "h": 6
+                    }
+                }
+            ]
+        },
+        {
+            "type": "row",
+            "title": "[K8s Workloads] - Listener Service",
+            "id": 5,
+            "collapsed": true,
+            "gridPos": {
+                "x": 0,
+                "y": 4,
+                "w": 24,
+                "h": 1
+            },
+            "panels": [
+                {
+                    "type": "graph",
+                    "title": "RabbitMQ Connection Attempts",
+                    "targets": [
+                        {
+                            "expr": "rabbitmq_connection_attempts_total",
+                            "legendFormat": "Connection Attempts",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "id": 1,
+                    "gridPos": {
+                        "x": 0,
+                        "y": 0,
+                        "w": 12,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "graph",
+                    "title": "RabbitMQ Connection Errors",
+                    "targets": [
+                        {
+                            "expr": "rabbitmq_connection_errors_total",
+                            "legendFormat": "Connection Errors",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "id": 2,
+                    "gridPos": {
+                        "x": 12,
+                        "y": 0,
+                        "w": 12,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "graph",
+                    "title": "RabbitMQ Messages Processed",
+                    "targets": [
+                        {
+                            "expr": "rabbitmq_messages_processed_total",
+                            "legendFormat": "Messages Processed",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "id": 3,
+                    "gridPos": {
+                        "x": 0,
+                        "y": 6,
+                        "w": 12,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "graph",
+                    "title": "RabbitMQ Message Processing Duration (s)",
+                    "targets": [
+                        {
+                            "expr": "histogram_quantile(0.95, sum(rate(rabbitmq_message_processing_duration_seconds_bucket[1m])) by (le))",
+                            "legendFormat": "p95 Message Duration",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        },
+                        {
+                            "expr": "sum(rate(rabbitmq_message_processing_duration_seconds_sum[1m])) / sum(rate(rabbitmq_message_processing_duration_seconds_count[1m]))",
+                            "legendFormat": "Average Message Duration",
+                            "refId": "B",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "id": 4,
+                    "gridPos": {
+                        "x": 12,
+                        "y": 6,
+                        "w": 12,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "graph",
+                    "title": "RabbitMQ Message Processing Errors",
+                    "targets": [
+                        {
+                            "expr": "rabbitmq_message_errors_total",
+                            "legendFormat": "Processing Errors",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "id": 5,
+                    "gridPos": {
+                        "x": 0,
+                        "y": 12,
+                        "w": 12,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "stat",
+                    "title": "RabbitMQ Connection Status",
+                    "targets": [
+                        {
+                            "expr": "count(up{job='rabbitmq'}) OR on() vector(0)",
+                            "interval": "1m",
+                            "legendFormat": "RabbitMQ Connection Status",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "valueFontSize": "80%",
+                    "gauge": {
+                        "minValue": 0,
+                        "maxValue": 1
+                    },
+                    "id": 6,
+                    "gridPos": {
+                        "x": 12,
+                        "y": 12,
+                        "w": 12,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "stat",
+                    "title": "CPU Usage",
+                    "targets": [
+                        {
+                            "expr": "rate(container_cpu_usage_seconds_total{container=\"authentication-service\"}[1m])",
+                            "legendFormat": "CPU Usage",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "valueFontSize": "80%",
+                    "gauge": {
+                        "minValue": 0,
+                        "maxValue": 100
+                    },
+                    "id": 7,
+                    "gridPos": {
+                        "x": 0,
+                        "y": 18,
+                        "w": 12,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "stat",
+                    "title": "Memory Usage",
+                    "targets": [
+                        {
+                            "expr": "(container_memory_working_set_bytes{container=\"authentication-service\"}) / 1024 / 1024",
+                            "legendFormat": "Memory Usage",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "valueFontSize": "80%",
+                    "gauge": {
+                        "minValue": 0,
+                        "maxValue": 100
+                    },
+                    "id": 8,
+                    "gridPos": {
+                        "x": 12,
+                        "y": 18,
+                        "w": 12,
+                        "h": 6
+                    }
+                }
+            ]
+        },
+        {
+            "type": "row",
+            "title": "[K8s Workloads] - Logger Service",
+            "id": 6,
+            "collapsed": true,
+            "gridPos": {
+                "x": 0,
+                "y": 5,
+                "w": 24,
+                "h": 1
+            },
+            "panels": [
+                {
+                    "type": "graph",
+                    "title": "Log Insertions Total",
+                    "targets": [
+                        {
+                            "expr": "sum(rate(logger_service_log_inserts_total[5m]))",
+                            "legendFormat": "{{status}}",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "id": 1,
+                    "gridPos": {
+                        "x": 0,
+                        "y": 0,
+                        "w": 12,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "graph",
+                    "title": "Log Insertion Errors",
+                    "targets": [
+                        {
+                            "expr": "sum(rate(logger_service_log_insertion_errors_total[5m]))",
+                            "legendFormat": "Errors",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "id": 2,
+                    "gridPos": {
+                        "x": 12,
+                        "y": 0,
+                        "w": 12,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "graph",
+                    "title": "Log Insertion Duration (s)",
+                    "targets": [
+                        {
+                            "expr": "histogram_quantile(0.95, sum(rate(logger_service_log_insertion_duration_seconds_bucket[5m])) by (le))",
+                            "legendFormat": "p95 - {{status}}",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "id": 3,
+                    "gridPos": {
+                        "x": 0,
+                        "y": 6,
+                        "w": 12,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "graph",
+                    "title": "gRPC Request Duration (s)",
+                    "targets": [
+                        {
+                            "expr": "histogram_quantile(0.95, sum(rate(logger_service_grpc_request_duration_seconds_bucket[5m])) by (le, method))",
+                            "legendFormat": "p95 - {{method}}",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "id": 4,
+                    "gridPos": {
+                        "x": 12,
+                        "y": 6,
+                        "w": 12,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "stat",
+                    "title": "Database Connection Status (MongoDB)",
+                    "targets": [
+                        {
+                            "expr": "count(up{job='mongo'}) OR on() vector(0)",
+                            "interval": "1m",
+                            "legendFormat": "MongoDB Connection Status",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "valueFontSize": "80%",
+                    "gauge": {
+                        "minValue": 0,
+                        "maxValue": 1
+                    },
+                    "id": 5,
+                    "gridPos": {
+                        "x": 0,
+                        "y": 12,
+                        "w": 12,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "stat",
+                    "title": "CPU Usage",
+                    "targets": [
+                        {
+                            "expr": "rate(container_cpu_usage_seconds_total{container=\"logger-service\"}[1m]) * 100",
+                            "legendFormat": "CPU Usage",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "valueFontSize": "80%",
+                    "gauge": {
+                        "minValue": 0,
+                        "maxValue": 100
+                    },
+                    "id": 6,
+                    "gridPos": {
+                        "x": 12,
+                        "y": 12,
+                        "w": 12,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "stat",
+                    "title": "Memory Usage (MB)",
+                    "targets": [
+                        {
+                            "expr": "(container_memory_working_set_bytes{container=\"logger-service\"}) / 1024 / 1024",
+                            "legendFormat": "Memory Usage",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "valueFontSize": "80%",
+                    "gauge": {
+                        "minValue": 0,
+                        "maxValue": 1000
+                    },
+                    "id": 7,
+                    "gridPos": {
+                        "x": 0,
+                        "y": 18,
+                        "w": 12,
+                        "h": 6
+                    }
+                }
+            ]
+        },
+        {
+            "type": "row",
+            "title": "[K8s Workloads] - Mailer Service",
+            "id": 7,
+            "collapsed": true,
+            "gridPos": {
+                "x": 0,
+                "y": 6,
+                "w": 24,
+                "h": 1
+            },
+            "panels": [
+                {
+                    "type": "graph",
+                    "title": "Mail Send Attempts",
+                    "targets": [
+                        {
+                            "expr": "sum(rate(mailer_service_mail_send_attempts_total[5m])) by (status)",
+                            "legendFormat": "{{status}}",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "id": 1,
+                    "gridPos": {
+                        "x": 0,
+                        "y": 0,
+                        "w": 12,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "graph",
+                    "title": "Mail Send Errors",
+                    "targets": [
+                        {
+                            "expr": "sum(rate(mailer_service_mail_send_errors_total[5m]))",
+                            "legendFormat": "Errors",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "id": 2,
+                    "gridPos": {
+                        "x": 12,
+                        "y": 0,
+                        "w": 12,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "graph",
+                    "title": "Mail Send Duration (s)",
+                    "targets": [
+                        {
+                            "expr": "histogram_quantile(0.95, sum(rate(mailer_service_mail_send_duration_seconds_bucket[5m])) by (le, status))",
+                            "legendFormat": "p95 - {{status}}",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "id": 3,
+                    "gridPos": {
+                        "x": 0,
+                        "y": 6,
+                        "w": 12,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "stat",
+                    "title": "CPU Usage",
+                    "targets": [
+                        {
+                            "expr": "rate(container_cpu_usage_seconds_total{container=\"mailer-service\"}[1m]) * 100",
+                            "legendFormat": "CPU Usage",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "valueFontSize": "80%",
+                    "gauge": {
+                        "minValue": 0,
+                        "maxValue": 100
+                    },
+                    "id": 4,
+                    "gridPos": {
+                        "x": 12,
+                        "y": 6,
+                        "w": 12,
+                        "h": 6
+                    }
+                },
+                {
+                    "type": "stat",
+                    "title": "Memory Usage (MB)",
+                    "targets": [
+                        {
+                            "expr": "(container_memory_working_set_bytes{container=\"mailer-service\"}) / 1024 / 1024",
+                            "legendFormat": "Memory Usage",
+                            "refId": "A",
+                            "datasource": "Prometheus"
+                        }
+                    ],
+                    "valueFontSize": "80%",
+                    "gauge": {
+                        "minValue": 0,
+                        "maxValue": 1000
+                    },
+                    "id": 5,
+                    "gridPos": {
+                        "x": 0,
+                        "y": 12,
+                        "w": 12,
+                        "h": 6
+                    }
+                }
+            ]
+        }
+    ],
+    "overwrite": true
+}

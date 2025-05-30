@@ -1,0 +1,45 @@
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install required packages
+RUN apt-get update && apt-get install -y \
+    curl \
+    bash \
+    iptables \
+    conntrack \
+    socat \
+    docker.io \
+    gettext-base \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install kubectl
+RUN curl -LO "https://dl.k8s.io/release/$(curl -Ls https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && \
+    install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl && \
+    rm kubectl
+
+# Install Minikube
+ENV MINIKUBE_VERSION=v1.33.1
+RUN curl -Lo /usr/local/bin/minikube https://storage.googleapis.com/minikube/releases/${MINIKUBE_VERSION}/minikube-linux-amd64 && \
+    chmod +x /usr/local/bin/minikube
+
+# Safe user setup
+ARG USER_UID=1010
+ARG USER_GID=1010
+ARG DOCKER_GID=984
+ARG USERNAME=gitlab
+
+RUN \
+    if ! getent group docker >/dev/null; then groupadd -g ${DOCKER_GID} docker; fi && \
+    if ! getent group ${USER_GID} >/dev/null; then groupadd -g ${USER_GID} hostgroup; else groupadd hostgroup; fi && \
+    if ! id -u ${USERNAME} >/dev/null 2>&1 && ! getent passwd ${USER_UID} >/dev/null; then \
+    useradd -m -s /bin/bash -u ${USER_UID} -g hostgroup -G docker ${USERNAME}; \
+    else \
+    echo "User '${USERNAME}' or UID ${USER_UID} already exists. Skipping useradd."; \
+    fi
+
+# Don't switch user here — let GitLab control that
+# USER ${USERNAME}
+
+CMD ["/bin/bash"]

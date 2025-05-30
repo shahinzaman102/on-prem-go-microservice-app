@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: monitoring-helm-monitoring-chart-dashboards
+  namespace: monitoring
+data:
+  example-dashboard.json: |
+    {
+      "dashboard": {
+        "title": "Example Dashboard",
+        "panels": []
+      }
+    }

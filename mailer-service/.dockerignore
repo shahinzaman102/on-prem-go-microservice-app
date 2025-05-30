@@ -1,0 +1,19 @@
+# Git and version control
+.git
+.gitignore
+
+# Docker-related files
+.dockerignore
+
+# Editor/IDE files
+.vscode/
+.idea/
+
+# misc
+.DS_Store
+*.pem
+
+# Test-related files
+test
+
+readme.md

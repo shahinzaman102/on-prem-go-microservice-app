@@ -1,0 +1,56 @@
+image: shahinzaman/runner-tools:latest
+
+variables:
+  IMAGE_TAG: "$CI_COMMIT_SHORT_SHA"
+
+stages:
+  - build
+  - deploy
+
+before_script:
+  - export HOME=/root
+  - mkdir -p /home/shahinzaman
+  - ln -s /root/.minikube /home/shahinzaman/.minikube || true
+  - ln -s /root/.kube /home/shahinzaman/.kube || true
+  - eval $(minikube -p minikube docker-env)
+  - echo "DOCKER_HOST is $DOCKER_HOST"
+  - echo "Docker Cert Path -> $DOCKER_CERT_PATH"
+  - ls -l $DOCKER_CERT_PATH
+  - docker info
+  - docker ps
+
+build:
+  stage: build
+  tags:
+    - docker
+  script:
+    - echo "🏗️ Building Docker images..."
+    - |
+      for service in authentication-service broker-service front-end listener-service logger-service mailer-service; do
+        echo "🔨 Building $service..."
+        docker build -t $service:$IMAGE_TAG "$CI_PROJECT_DIR/$service" || exit 1
+      done
+  after_script:
+    - docker system prune -f --volumes
+
+deploy:
+  stage: deploy
+  tags:
+    - docker
+  script:
+    - echo "🌀 Substituting Kubernetes manifests..."
+    - |
+      for file in ${CI_PROJECT_DIR}/config/k8s/*.yml; do
+        envsubst < "$file" > "${file%.yml}_deployment.yaml"
+      done
+    - echo "🚀 Applying manifests to Minikube..."
+    - |
+      for file in ${CI_PROJECT_DIR}/config/k8s/*_deployment.yaml; do
+        kubectl apply -f "$file" || exit 1
+      done
+    - echo "🌐 Applying app-ingress.yaml..."
+    - kubectl apply -f ${CI_PROJECT_DIR}/config/app-ingress.yml
+
+  after_script:
+    - echo "🧹 Cleaning up..."
+    - rm -f ${CI_PROJECT_DIR}/config/k8s/*_deployment.yaml

@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbitmq
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rabbitmq
+  template:
+    metadata:
+      labels:
+        app: rabbitmq
+    spec:
+      containers:
+        - name: rabbitmq
+          image: "rabbitmq:4.0.5-management-alpine"
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "100m"
+            limits:
+              memory: "128Mi"
+              cpu: "250m"
+          ports:
+            - containerPort: 5672   # Main AMQP port
+            - containerPort: 15692  # Prometheus metrics port
+            - containerPort: 15672  # Management UI port
+          env:
+            - name: RABBITMQ_PROMETHEUS
+              value: "true"
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq
+  labels:
+    app: rabbitmq
+    release: monitoring
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/path: "/metrics"
+    prometheus.io/port: "15692"
+spec:
+  selector:
+    app: rabbitmq
+  ports:
+    - protocol: TCP
+      name: amqp
+      port: 5672
+      targetPort: 5672
+    - protocol: TCP
+      name: metrics-port
+      port: 15692
+      targetPort: 15692
+    - protocol: TCP
+      name: management
+      port: 15672
+      targetPort: 15672
+  type: ClusterIP

@@ -1,0 +1,30 @@
+# This file is to instrument the `Application Metrics` Grafana Dashboard - 
+# Which work like a Network Jammer for the Broker-service (app's middleware) - 
+# And for that the microservices can't communicate - & the application stops functioning.
+# ---------------------------------------------------------------------------------------
+# run --> 
+# cd /mnt/c/Users/shahi/Downloads/go-microservice-app/config/__others  (set the correct path)
+# kubectl apply -f network-policy.yaml
+
+# To delete --> 
+# kubectl delete networkpolicy deny-broker-service
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: deny-broker-service
+spec:
+  podSelector:
+    matchLabels:
+      app: broker-service
+  policyTypes:
+    # - Egress
+    - Ingress
+
+# -----------------------------------------
+# Ingress = traffic coming into a network.
+# Egress = traffic going out of a network.
+
+# Think:
+    # Ingress → IN
+    # Egress → EXIT

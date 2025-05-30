@@ -1,0 +1,258 @@
+(1) All Service Status --> Database Status (MongoDB)
+====================================================
+
+Find the Panel --> [All Service Status --> Database Status (MongoDB)] --> Menu --> More... --> New alert rule
+
+1. Enter alert rule name --> 
+	MongoDB Database Down
+
+2. Define query and alert condition --> 
+	Query Name:   G 	(auto selected)
+	Data Source:  Prometheus 	(auto selected)
+	Query: 		  count(up{job='mongo'}) OR on() vector(0) 	(auto selected)
+
+	Rule type: Grafana-managed
+	===========================
+	Expressions --> 
+
+	A Reduce ***(Remove expression)***
+	-----------
+	Input:
+	Function: Last
+	Mode: Strict
+
+	B Threshold
+	------------
+	Input: G
+	IS BELOW: 1
+
+3. Set evaluation behavior --> 
+
+	Folder: Database Alerts
+	Evaluation group and interval: DatabaseServiceGroup
+	Pending period: 30s
+
+4. Configure labels and notifications --> 
+
+	Labels (Edit labels) --> 
+	service mongo (type one and hit enter..)
+
+	Notifications --> 
+	Select contact point
+	Contact point: grafana-default-slack
+
+5. Configure notification message --> 
+
+	Summary (optional): MongoDB service is down!
+	Description (optional): Alert triggered when MongoDB Service is down (no data).
+
+Save rule and exit (from the top right)
+
+-------------------------------------------------------------------------------------
+
+(2) Authentication Service --> Error Count
+===========================================
+
+Find the Panel --> [Authentication Service --> Error Count] --> Menu --> More... --> New alert rule
+
+1. Enter alert rule name --> 
+	Authentication Service Error
+
+2. Define query and alert condition --> 
+	Query Name:   C 	(auto selected)
+	Data Source:  Prometheus 	(auto selected)
+	Query: 		  sum by(method, endpoint) (rate(auth_service_error_count[5m])) 	(auto selected)
+
+	Rule type: Grafana-managed
+	===========================
+	Expressions --> 
+
+	A Reduce
+	---------
+	Input: C
+	Function: Last
+	Mode: Strict
+
+	B Threshold
+	------------
+	Input: A
+	IS ABOVE: 0
+
+3. Set evaluation behavior --> 
+
+	Folder: Error Alerts
+	Evaluation group and interval: AuthServiceGroup
+	Pending period: 30s
+
+4. Configure labels and notifications --> 
+
+	Labels (Edit labels) --> 
+	service authentication (type one and hit enter..)
+
+	Notifications --> 
+	Select contact point
+	Contact point: grafana-default-slack
+
+5. Configure notification message --> 
+
+	Summary (optional): Authentication Service Error!
+	Description (optional): Alert triggered due to error with Authentication service (no response data received).
+
+Save rule and exit (from the top right)
+
+-------------------------------------------------------------------------------------
+
+(3) Broker Service --> Error Count
+===================================
+
+Find the Panel --> [Broker Service --> Error Count] --> Menu --> More... --> New alert rule
+
+1. Enter alert rule name --> 
+	Broker Service Error
+
+2. Define query and alert condition --> 
+	Query Name:   C 	(auto selected)
+	Data Source:  Prometheus 	(auto selected)
+	Query: 		  sum(rate(broker_request_errors_total[1m]))	(auto selected)
+
+	Rule type: Grafana-managed
+	===========================
+	Expressions --> 
+
+	A Reduce
+	---------
+	Input: C
+	Function: Last
+	Mode: Strict
+
+	B Threshold
+	------------
+	Input: A
+	IS ABOVE: 0
+
+3. Set evaluation behavior --> 
+
+	Folder: Error Alerts
+	Evaluation group and interval: BrokerServiceGroup
+	Pending period: 30s
+
+4. Configure labels and notifications --> 
+
+	Labels (Edit labels) --> 
+	service broker (type one and hit enter..)
+
+	Notifications --> 
+	Select contact point
+	Contact point: grafana-default-slack
+
+5. Configure notification message --> 
+
+	Summary (optional): Broker Service Error!
+	Description (optional): Alert triggered due to error with Broker service (no response data received).
+
+Save rule and exit (from the top right)
+
+-------------------------------------------------------------------------------------
+
+(4) Broker Service --> gRPC & RPC Failures
+===========================================
+
+Find the Panel --> [Broker Service --> gRPC & RPC Failures] --> Menu --> More... --> New alert rule
+
+1. Enter alert rule name --> 
+	Broker Service gRPC & RPC Failure
+
+2. Define query and alert condition --> 
+	Query Name:   E 	(auto selected)
+	Data Source:  Prometheus 	(auto selected)
+	Query: 		  sum(rate(broker_grpc_failures_total[1m]) + rate(broker_rpc_failures_total[1m]))	(auto selected)
+
+	Rule type: Grafana-managed
+	===========================
+	Expressions --> 
+
+	A Reduce ***(Remove expression)***
+	-----------
+	Input:
+	Function: Last
+	Mode: Strict
+
+	B Threshold
+	------------
+	Input: E
+	IS ABOVE: 0
+
+3. Set evaluation behavior --> 
+
+	Folder: Error Alerts
+	Evaluation group and interval: BrokerServiceGroup
+	Pending period: 30s
+
+4. Configure labels and notifications --> 
+
+	Labels (Edit labels) --> 
+	service broker (type one and hit enter..)
+	failures gRPC_RPC_log
+
+	Notifications --> 
+	Select contact point
+	Contact point: grafana-default-slack
+
+5. Configure notification message --> 
+
+	Summary (optional): Broker Service gRPC & RPC Failure!
+	Description (optional): Alert triggered due to gRPC & RPC Failure with Broker service (no response data received).
+
+Save rule and exit (from the top right)
+
+-------------------------------------------------------------------------------------
+
+(5) Logger Service --> Log Insertion Errors
+============================================
+
+Find the Panel --> [Logger Service --> Log Insertion Errors] --> Menu --> More... --> New alert rule
+
+1. Enter alert rule name --> 
+	Logger Service log Insertion Error
+
+2. Define query and alert condition --> 
+	Query Name:   B 	(auto selected)
+	Data Source:  Prometheus 	(auto selected)
+	Query: 		  sum(rate(logger_service_log_insertion_errors_total[5m]))	(auto selected)
+
+	Rule type: Grafana-managed
+	===========================
+	Expressions --> 
+
+	A Reduce ***(Remove expression)***
+	-----------
+	Input:
+	Function: Last
+	Mode: Strict
+
+	B Threshold
+	------------
+	Input: E
+	IS ABOVE: 0
+
+3. Set evaluation behavior --> 
+
+	Folder: Error Alerts
+	Evaluation group and interval: LoggerServiceGroup
+	Pending period: 30s
+
+4. Configure labels and notifications --> 
+
+	Labels (Edit labels) --> 
+	service logger (type one and hit enter..)
+
+	Notifications --> 
+	Select contact point
+	Contact point: grafana-default-slack
+
+5. Configure notification message --> 
+
+	Summary (optional): Logger Service log Insertion Error!
+	Description (optional): Alert triggered due to Log Insertion Error with Logger service (no response data received).
+
+Save rule and exit (from the top right)

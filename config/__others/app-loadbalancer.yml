@@ -1,0 +1,41 @@
+# LoadBalancer Service for microsvc.net
+apiVersion: v1
+kind: Service
+metadata:
+  name: microsvc-net-service
+  namespace: default
+  annotations:
+    cloud.google.com/load-balancer-type: "External"
+  labels:
+    app: front-end
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 35.232.43.136 # Reserved IP for microsvc.net
+  selector:
+    app: front-end
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8081
+
+---
+
+# LoadBalancer Service for broker.microsvc.net
+apiVersion: v1
+kind: Service
+metadata:
+  name: broker-net-service
+  namespace: default
+  annotations:
+    cloud.google.com/load-balancer-type: "External"
+  labels:
+    app: broker-service
+spec:
+  type: LoadBalancer
+  loadBalancerIP: 34.133.254.153 # Reserved IP for broker.microsvc.net
+  selector:
+    app: broker-service
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080

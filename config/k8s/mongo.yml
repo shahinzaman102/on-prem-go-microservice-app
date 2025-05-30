@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mongo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongo
+  template:
+    metadata:
+      labels:
+        app: mongo
+    spec:
+      containers:
+        - name: mongo
+          image: "mongo:4.2.17-bionic"
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "100m"
+            limits:
+              memory: "128Mi"
+              cpu: "250m"
+          env:
+            - name: MONGO_INITDB_DATABASE
+              value: "logs"
+            - name: MONGO_INITDB_ROOT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: mongo-secrets
+                  key: MONGO_INITDB_ROOT_USERNAME
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mongo-secrets
+                  key: MONGO_INITDB_ROOT_PASSWORD
+          ports:
+            - containerPort: 27017
+
+          # Adding Liveness and Readiness Probes for MongoDB
+          livenessProbe:
+            exec:
+              command:
+                - "mongo"
+                - "--eval"
+                - "db.adminCommand('ping')"
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            failureThreshold: 3
+
+          readinessProbe:
+            exec:
+              command:
+                - "mongo"
+                - "--eval"
+                - "db.adminCommand('ping')"
+            initialDelaySeconds: 10
+            periodSeconds: 20
+            failureThreshold: 3
+
+        - name: mongo-exporter
+          image: "bitnami/mongodb-exporter:latest"
+          resources:
+            requests:
+              memory: "32Mi"
+              cpu: "50m"
+            limits:
+              memory: "64Mi"
+              cpu: "100m"
+          env:
+            - name: MONGODB_URI
+              value: "mongodb://$(MONGO_INITDB_ROOT_USERNAME):$(MONGO_INITDB_ROOT_PASSWORD)@mongo:27017/admin"
+          ports:
+            - containerPort: 9216  # Default MongoDB Exporter port
+
+      # Volumes, etc., remain unchanged
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo
+  labels:
+    app: mongo
+    release: monitoring
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/path: "/metrics"
+    prometheus.io/port: "9216"  # Use exporter port, not MongoDB's 27017
+spec:
+  selector:
+    app: mongo
+  ports:
+    - protocol: TCP
+      name: mongo-port
+      port: 27017
+      targetPort: 27017
+    - protocol: TCP
+      name: metrics-port
+      port: 9216
+      targetPort: 9216  # Exposing metrics
+  type: ClusterIP

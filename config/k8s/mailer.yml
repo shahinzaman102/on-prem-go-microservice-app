@@ -1,0 +1,86 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mailer-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mailer-service
+  template:
+    metadata:
+      labels:
+        app: mailer-service
+    spec:
+      serviceAccountName: mailer-service-sa
+      containers:
+      - name: mailer-service
+        image: ${DOCKER_REGISTRY}/${GCP_PROJECT_ID}/${GAR_REPO_NAME}/mailer-service:${IMAGE_TAG}
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+          limits:
+            memory: "128Mi"
+            cpu: "250m"
+        env:
+          - name: MAIL_DOMAIN
+            value: ""
+          - name: MAIL_HOST
+            # value: "localhost"
+            value: "mailhog"
+          - name: MAIL_PORT
+            value: "1025"
+          - name: MAIL_ENCRYPTION
+            value: "none"
+          - name: MAIL_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: mailer-secrets
+                key: MAIL_USERNAME
+          - name: MAIL_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mailer-secrets
+                key: MAIL_PASSWORD
+          - name: FROM_NAME
+            value: "John Smith"
+          - name: FROM_ADDRESS
+            value: "admin@example.com"
+        ports:
+          - containerPort: 80
+        livenessProbe:
+          httpGet:
+            path: /liveness
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /readiness
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: mailer-service
+  labels:
+    app: mailer-service
+    release: monitoring
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/path: "/metrics"
+    prometheus.io/port: "80"
+spec:
+  selector:
+    app: mailer-service
+  ports:
+    - protocol: TCP
+      name: main-port
+      port: 80
+      targetPort: 80
+  type: ClusterIP

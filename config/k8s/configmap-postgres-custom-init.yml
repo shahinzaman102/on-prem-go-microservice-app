@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-custom-init
+data:
+  init.sh: |
+    #!/bin/bash
+    set -e
+
+    echo "Checking if database 'users' exists..."
+    psql -U postgres -tc "SELECT 1 FROM pg_database WHERE datname = 'users'" | grep -q 1 || \
+      (echo "Database 'users' not found. Creating it..."; psql -U postgres -c "CREATE DATABASE users")
+
+    echo "Running initialization script for 'users' database..."
+    if [ -f /docker-entrypoint-initdb.d/users.sql ]; then
+      psql -U postgres -d users -f /docker-entrypoint-initdb.d/users.sql
+    else
+      echo "Initialization script not found at /docker-entrypoint-initdb.d/users.sql"
+      exit 1
+    fi

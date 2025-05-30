@@ -1,0 +1,56 @@
+# Binaries for programs and plugins
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test binary, build output
+*.test
+*.out
+
+# Output of the `go build` command
+/build/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*.bak
+
+# Dependency directories
+vendor/
+
+# Logs
+*.log
+
+# Environment variables and secrets
+.env
+.env.*
+
+# Coverage files
+*.cover
+coverage.out
+
+# Temporary files and directories
+*.tmp
+*.temp
+/tmp/
+
+# Database-related files
+*.db
+*.sqlite
+
+# Debugging or profiling data
+*.pprof
+
+# Ignore compiled Go binaries
+*.o
+*.a
+*.so
+
+# Local dependencies
+/local-deps/
+
+# Custom build artifacts (update as per project needs)
+*.custom

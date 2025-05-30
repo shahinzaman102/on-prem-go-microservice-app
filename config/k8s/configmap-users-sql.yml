@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init-scripts
+data:
+  users.sql: |
+    -- Create the sequence only if it does not already exist
+    DO $$
+    BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_class WHERE relname = 'user_id_seq') THEN
+            CREATE SEQUENCE public.user_id_seq
+                START WITH 1
+                INCREMENT BY 1
+                NO MINVALUE
+                NO MAXVALUE
+                CACHE 1;
+        END IF;
+    END $$;
+
+    -- Set the owner of the sequence
+    ALTER TABLE public.user_id_seq OWNER TO postgres;
+
+    -- Create the users table only if it does not already exist
+    DO $$
+    BEGIN
+        IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'users') THEN
+            CREATE TABLE public.users (
+                id integer DEFAULT nextval('public.user_id_seq'::regclass) NOT NULL,
+                email character varying(255) UNIQUE,
+                first_name character varying(255),
+                last_name character varying(60),
+                password character varying(60),
+                user_active integer DEFAULT 0,
+                created_at timestamp without time zone,
+                updated_at timestamp without time zone,
+                PRIMARY KEY (id)
+            );
+        END IF;
+    END $$;
+
+    -- Set the owner of the table
+    ALTER TABLE public.users OWNER TO postgres;
+
+    -- Set the sequence value
+    SELECT pg_catalog.setval('public.user_id_seq', COALESCE((SELECT MAX(id) FROM public.users), 1), false);
+
+    -- Insert admin user only if it does not already exist
+    INSERT INTO public.users (email, first_name, last_name, password, user_active, created_at, updated_at)
+    VALUES
+    ('${USER_EMAIL}', 'Admin', 'User', '${USER_PASSWORD}', 1, '2022-03-14 00:00:00', '2022-03-14 00:00:00')
+    ON CONFLICT (email) DO NOTHING;

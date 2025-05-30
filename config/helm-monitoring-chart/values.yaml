@@ -1,0 +1,175 @@
+namespaceOverride: monitoring
+
+global:
+  rbac:
+    create: true
+  podSecurityPolicy:
+    enabled: false
+  imagePullSecrets: []
+
+service:
+  type: NodePort
+  port: 80
+
+# Service Account configuration
+serviceAccount:
+  create: false
+  name: "monitoring-service-account"
+  automount: true
+  annotations: {}
+
+image:
+  repository: "prom/prometheus"
+  tag: "v2.33.0"
+  pullPolicy: IfNotPresent
+
+kube-prometheus-stack:
+  prometheus:
+    serviceAccountName: "monitoring-service-account"
+    service:
+      type: NodePort
+      port: 9090
+      targetPort: 9090
+    persistence:
+      enabled: true
+      storageClass: standard-rwo
+      accessModes:
+        - ReadWriteOnce
+      size: 20Gi
+    resources:
+      requests:
+        memory: 512Mi
+        cpu: 200m
+      limits:
+        memory: 1Gi
+        cpu: 1
+    additionalArgs:
+      - --storage.tsdb.retention.time=3d
+      - --storage.tsdb.retention.size=18GB
+      - --storage.tsdb.min-block-duration=2h
+
+    serviceMonitor:
+      enabled: true
+    serviceMonitorSelectorNilUsesHelmValues: false
+    serviceMonitorNamespaceSelector:
+      any: default
+
+    # Health checks for Prometheus
+    livenessProbe:
+      httpGet:
+        path: /-/healthy
+        port: 9090
+      initialDelaySeconds: 30
+      periodSeconds: 60
+      timeoutSeconds: 10
+    readinessProbe:
+      httpGet:
+        path: /-/ready
+        port: 9090
+      initialDelaySeconds: 30
+      periodSeconds: 60
+      timeoutSeconds: 10
+
+  grafana:
+    serviceAccountName: "monitoring-service-account"
+    enabled: true
+    service:
+      type: NodePort
+      port: 3000
+      targetPort: 3000
+    persistence:
+      enabled: true
+      storageClass: standard-rwo
+      accessModes:
+        - ReadWriteOnce
+      size: 5Gi
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 100m
+      limits:
+        memory: 512Mi
+        cpu: 500m
+    sidecar:
+      dashboards:
+        enabled: true
+        label: grafana_dashboard
+        folder: "/var/lib/grafana/dashboards"
+      datasources:
+        enabled: true
+    grafana.ini:
+      server:
+        root_url: "https://grafana.microsvc.net/"
+        serve_from_sub_path: false
+
+    # Health checks for Grafana
+    livenessProbe:
+      httpGet:
+        path: /api/health
+        port: 3000
+      initialDelaySeconds: 30
+      periodSeconds: 60
+      timeoutSeconds: 10
+    readinessProbe:
+      httpGet:
+        path: /api/health
+        port: 3000
+      initialDelaySeconds: 30
+      periodSeconds: 60
+      timeoutSeconds: 10
+
+  kube-state-metrics:
+    enabled: true
+    resources:
+      requests:
+        memory: 128Mi
+        cpu: 100m
+      limits:
+        memory: 256Mi
+        cpu: 250m
+
+  nodeExporter:
+    enabled: true
+    resources:
+      requests:
+        memory: 128Mi
+        cpu: 100m
+      limits:
+        memory: 256Mi
+        cpu: 250m
+
+  alertmanager:
+    enabled: false
+
+  metricsServer:
+    enabled: false
+
+  additionalScrapeConfigs: {}
+
+autoscaling:
+  enabled: false
+
+ingress:
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.global-static-ip-name: "reserved-monitoring-ip"
+    networking.gke.io/managed-certificates: monitoring-cert
+    kubernetes.io/ingress.class: "gce"
+    ingress.gcp.kubernetes.io/https-redirect: "true"
+  hosts:
+    - host: prometheus.microsvc.net
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: monitoring-kube-prometheus-prometheus
+              port: 9090
+    - host: grafana.microsvc.net
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: monitoring-grafana
+              port: 3000
