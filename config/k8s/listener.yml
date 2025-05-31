@@ -16,6 +16,7 @@ spec:
       containers:
       - name: listener-service
         image: listener-service:$IMAGE_TAG
+        imagePullPolicy: Never
         resources:
           requests:
             memory: "64Mi"

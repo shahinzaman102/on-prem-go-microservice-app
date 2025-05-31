@@ -16,6 +16,7 @@ spec:
       containers:
       - name: logger-service
         image: logger-service:$IMAGE_TAG
+        imagePullPolicy: Never
         resources:
           requests:
             memory: "64Mi"

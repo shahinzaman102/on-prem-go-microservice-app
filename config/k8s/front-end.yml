@@ -16,6 +16,7 @@ spec:
       containers:
       - name: front-end
         image: front-end:$IMAGE_TAG
+        imagePullPolicy: Never
         resources:
           requests:
             memory: "64Mi"

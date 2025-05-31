@@ -16,6 +16,7 @@ spec:
       containers:
       - name: mailer-service
         image: mailer-service:$IMAGE_TAG
+        imagePullPolicy: Never
         resources:
           requests:
             memory: "64Mi"
