@@ -40,29 +40,35 @@ deploy:
   script:
     - echo "🔐 Creating Kubernetes secrets from CI/CD variables..."
 
-    - kubectl delete secret postgres-secrets --ignore-not-found
-    - kubectl create secret generic postgres-secrets \
+    - |
+      kubectl delete secret postgres-secrets --ignore-not-found
+
+      kubectl create secret generic postgres-secrets \
         --from-literal=POSTGRES_USER="$POSTGRES_USER" \
         --from-literal=POSTGRES_PASSWORD="$POSTGRES_PASSWORD" \
         --from-literal=POSTGRES_DB="$POSTGRES_DB"
 
-    - kubectl delete secret pgadmin-secrets --ignore-not-found
-    - kubectl create secret generic pgadmin-secrets \
+    - |
+      kubectl delete secret pgadmin-secrets --ignore-not-found
+      kubectl create secret generic pgadmin-secrets \
         --from-literal=PGADMIN_USER="$PGADMIN_USER" \
         --from-literal=PGADMIN_PASSWORD="$PGADMIN_PASSWORD"
 
-    - kubectl delete secret mongo-secrets --ignore-not-found
-    - kubectl create secret generic mongo-secrets \
+    - |
+      kubectl delete secret mongo-secrets --ignore-not-found
+      kubectl create secret generic mongo-secrets \
         --from-literal=MONGO_INITDB_ROOT_USERNAME="$MONGO_INITDB_ROOT_USERNAME" \
         --from-literal=MONGO_INITDB_ROOT_PASSWORD="$MONGO_INITDB_ROOT_PASSWORD"
 
-    - kubectl delete secret mailer-secrets --ignore-not-found
-    - kubectl create secret generic mailer-secrets \
+    - |
+      kubectl delete secret mailer-secrets --ignore-not-found
+      kubectl create secret generic mailer-secrets \
         --from-literal=MAIL_USERNAME="$MAIL_USERNAME" \
         --from-literal=MAIL_PASSWORD="$MAIL_PASSWORD"
 
-    - kubectl delete secret user-secrets --ignore-not-found
-    - kubectl create secret generic user-secrets \
+    - |
+      kubectl delete secret user-secrets --ignore-not-found
+      kubectl create secret generic user-secrets \
         --from-literal=USER_EMAIL="$USER_EMAIL" \
         --from-literal=USER_PASSWORD="$USER_PASSWORD"
 
