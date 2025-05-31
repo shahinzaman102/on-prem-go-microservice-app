@@ -15,7 +15,7 @@ spec:
       serviceAccountName: front-end-sa
       containers:
       - name: front-end
-        image: ${DOCKER_REGISTRY}/${GCP_PROJECT_ID}/${GAR_REPO_NAME}/front-end:${IMAGE_TAG}
+        image: front-end:$IMAGE_TAG
         resources:
           requests:
             memory: "64Mi"

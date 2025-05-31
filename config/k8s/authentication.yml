@@ -15,7 +15,7 @@ spec:
       serviceAccountName: authentication-service-sa
       containers:
         - name: authentication-service
-          image: ${DOCKER_REGISTRY}/${GCP_PROJECT_ID}/${GAR_REPO_NAME}/authentication-service:${IMAGE_TAG}
+          image: authentication-service:$IMAGE_TAG
           resources:
             requests:
               memory: "64Mi"

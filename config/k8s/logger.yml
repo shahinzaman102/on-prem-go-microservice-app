@@ -15,7 +15,7 @@ spec:
       serviceAccountName: logger-service-sa
       containers:
       - name: logger-service
-        image: ${DOCKER_REGISTRY}/${GCP_PROJECT_ID}/${GAR_REPO_NAME}/logger-service:${IMAGE_TAG}
+        image: logger-service:$IMAGE_TAG
         resources:
           requests:
             memory: "64Mi"

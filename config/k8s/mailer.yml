@@ -15,7 +15,7 @@ spec:
       serviceAccountName: mailer-service-sa
       containers:
       - name: mailer-service
-        image: ${DOCKER_REGISTRY}/${GCP_PROJECT_ID}/${GAR_REPO_NAME}/mailer-service:${IMAGE_TAG}
+        image: mailer-service:$IMAGE_TAG
         resources:
           requests:
             memory: "64Mi"
