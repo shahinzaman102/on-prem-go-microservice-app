@@ -65,5 +65,5 @@ spec:
       name: main-port
       port: 8081
       targetPort: 8081
-  # type: ClusterIP # For LoadBalancer Setup
-  type: NodePort # For Ingress Setup with GCE
+  type: ClusterIP # For LoadBalancer Setup
+  # type: NodePort # For Ingress Setup with GCE
