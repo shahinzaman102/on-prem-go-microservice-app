@@ -12,7 +12,7 @@ spec:
       labels:
         app: front-end
     spec:
-      serviceAccountName: front-end-sa
+      # serviceAccountName: front-end-sa
       containers:
       - name: front-end
         image: front-end:$IMAGE_TAG

@@ -12,7 +12,7 @@ spec:
       labels:
         app: broker-service
     spec:
-      serviceAccountName: broker-service-sa
+      # serviceAccountName: broker-service-sa
       containers:
       - name: broker-service
         image: broker-service:$IMAGE_TAG
