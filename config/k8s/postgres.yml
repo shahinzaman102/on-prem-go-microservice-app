@@ -79,29 +79,29 @@ spec:
               cpu: "250m"
           command: ["/bin/bash", "-c", "docker-entrypoint.sh postgres && /tmp/init.sh"]
 
-          livenessProbe:
-            exec:
-              command:
-                - "pg_isready"
-                - "-U"
-                - "postgres"
-                - "-d"
-                - "users"
-            initialDelaySeconds: 30
-            periodSeconds: 60
-            failureThreshold: 3
+          # livenessProbe:
+          #   exec:
+          #     command:
+          #       - "pg_isready"
+          #       - "-U"
+          #       - "postgres"
+          #       - "-d"
+          #       - "users"
+          #   initialDelaySeconds: 30
+          #   periodSeconds: 60
+          #   failureThreshold: 3
 
-          readinessProbe:
-            exec:
-              command:
-                - "pg_isready"
-                - "-U"
-                - "postgres"
-                - "-d"
-                - "users"
-            initialDelaySeconds: 10
-            periodSeconds: 20
-            failureThreshold: 3
+          # readinessProbe:
+          #   exec:
+          #     command:
+          #       - "pg_isready"
+          #       - "-U"
+          #       - "postgres"
+          #       - "-d"
+          #       - "users"
+          #   initialDelaySeconds: 10
+          #   periodSeconds: 20
+          #   failureThreshold: 3
 
           # livenessProbe:
           #   exec:
