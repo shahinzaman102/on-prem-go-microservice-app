@@ -81,24 +81,14 @@ spec:
           
           livenessProbe:
             exec:
-              command:
-                - "pg_isready"
-                - "-U"
-                - "$(POSTGRES_USER)"
-                - "-d"
-                - "$(POSTGRES_DB)"
+              command: ["sh", "-c", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
             initialDelaySeconds: 30
             periodSeconds: 60
             failureThreshold: 3
 
           readinessProbe:
             exec:
-              command:
-                - "pg_isready"
-                - "-U"
-                - "$(POSTGRES_USER)"
-                - "-d"
-                - "$(POSTGRES_DB)"
+              command: ["sh", "-c", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
             initialDelaySeconds: 10
             periodSeconds: 20
             failureThreshold: 3
