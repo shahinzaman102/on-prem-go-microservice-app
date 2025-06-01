@@ -128,6 +128,15 @@ func connectToDB() *sql.DB {
 	postgresPassword := os.Getenv("POSTGRES_PASSWORD")
 	postgresDB := os.Getenv("POSTGRES_DB")
 
+	// ⛔ safety check
+	if postgresUser == "" || postgresPassword == "" || postgresDB == "" {
+		logger.Fatalf("Missing required ENV vars: POSTGRES_USER=%q, POSTGRES_PASSWORD=%q, POSTGRES_DB=%q",
+			postgresUser, postgresPassword, postgresDB)
+	}
+
+	// ✅ Log safe DSN (don't log password)
+	logger.Infof("Using DB config: user=%s db=%s", postgresUser, postgresDB)
+
 	// Construct DSN dynamically
 	dsn := fmt.Sprintf("host=postgres port=5432 user=%s password=%s dbname=%s sslmode=disable timezone=UTC connect_timeout=5",
 		postgresUser, postgresPassword, postgresDB)
