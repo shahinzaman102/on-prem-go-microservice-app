@@ -103,7 +103,13 @@ spec:
               sleep 5
 
               echo "Running custom init script..."
-              /tmp/init.sh
+              if [ -f /tmp/init.sh ]; then
+                chmod +x /tmp/init.sh
+                /tmp/init.sh
+              else
+                echo "Custom init script not found!"
+                exit 1
+              fi
 
           livenessProbe:
             exec:
