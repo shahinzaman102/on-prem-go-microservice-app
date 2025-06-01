@@ -78,20 +78,44 @@ spec:
               memory: "128Mi"
               cpu: "250m"
           command: ["/bin/bash", "-c", "docker-entrypoint.sh postgres && /tmp/init.sh"]
-          
+
           livenessProbe:
             exec:
-              command: ["sh", "-c", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
+              command:
+                - "pg_isready"
+                - "-U"
+                - "postgres"
+                - "-d"
+                - "users"
             initialDelaySeconds: 30
             periodSeconds: 60
             failureThreshold: 3
 
           readinessProbe:
             exec:
-              command: ["sh", "-c", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
+              command:
+                - "pg_isready"
+                - "-U"
+                - "postgres"
+                - "-d"
+                - "users"
             initialDelaySeconds: 10
             periodSeconds: 20
             failureThreshold: 3
+
+          # livenessProbe:
+          #   exec:
+          #     command: ["sh", "-c", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
+          #   initialDelaySeconds: 30
+          #   periodSeconds: 60
+          #   failureThreshold: 3
+
+          # readinessProbe:
+          #   exec:
+          #     command: ["sh", "-c", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
+          #   initialDelaySeconds: 10
+          #   periodSeconds: 20
+          #   failureThreshold: 3
 
         - name: postgres-exporter
           image: prometheuscommunity/postgres-exporter:latest
