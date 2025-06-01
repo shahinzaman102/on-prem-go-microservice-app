@@ -61,8 +61,22 @@ spec:
                 secretKeyRef:
                   name: postgres-secrets
                   key: POSTGRES_DB
+
+            # ✅ Add these two lines:
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: POSTGRES_USER
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secrets
+                  key: POSTGRES_PASSWORD
+
             - name: PGDATA
               value: "/var/lib/postgresql/data_new"  # Forces a fresh initialization
+              
           volumeMounts:
             - mountPath: /var/lib/postgresql/data
               name: postgres-storage
