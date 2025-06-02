@@ -40,6 +40,9 @@ ENV PATH="/usr/local/go/bin:$PATH"
 RUN curl -sfL https://github.com/aquasecurity/trivy/releases/download/v0.34.0/trivy_0.34.0_Linux-64bit.tar.gz \
     | tar xz -C /usr/local/bin
 
+# Pre-download Trivy DB
+RUN trivy image --download-db-only
+
 # Safe user setup
 ARG USER_UID=1010
 ARG USER_GID=1010
