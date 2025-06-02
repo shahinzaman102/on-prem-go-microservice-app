@@ -12,7 +12,7 @@ require (
 	github.com/jackc/pgx/v4 v4.18.3
 	github.com/prometheus/client_golang v1.20.5
 	github.com/sirupsen/logrus v1.4.2
-	golang.org/x/crypto v0.30.0
+	golang.org/x/crypto v0.38.0
 )
 
 require (
