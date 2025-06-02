@@ -5,6 +5,8 @@ variables:
 
 stages:
   - build
+  - test
+  - scan
   - deploy
 
 before_script:
@@ -21,17 +23,63 @@ before_script:
 
 build:
   stage: build
+  parallel:
+    matrix:
+      - SERVICE_NAME: authentication-service
+      - SERVICE_NAME: broker-service
+      - SERVICE_NAME: front-end
+      - SERVICE_NAME: listener-service
+      - SERVICE_NAME: logger-service
+      - SERVICE_NAME: mailer-service
   tags:
     - docker
   script:
-    - echo "🏗️ Building Docker images..."
-    - |
-      for service in authentication-service broker-service front-end listener-service logger-service mailer-service; do
-        echo "🔨 Building $service..."
-        docker build -t $service:$IMAGE_TAG "$CI_PROJECT_DIR/$service" || exit 1
-      done
+    - echo "🔨 Building $SERVICE_NAME..."
+    - docker build -t $SERVICE_NAME:$IMAGE_TAG "$CI_PROJECT_DIR/$SERVICE_NAME" || exit 1
   after_script:
     - docker system prune -f --volumes
+
+test:
+  stage: test
+  parallel:
+    matrix:
+      - SERVICE_NAME: authentication-service
+      - SERVICE_NAME: broker-service
+      - SERVICE_NAME: front-end
+      - SERVICE_NAME: listener-service
+      - SERVICE_NAME: logger-service
+      - SERVICE_NAME: mailer-service
+  tags:
+    - docker
+  script:
+    - echo "Running tests for $SERVICE_NAME..."
+    - cd $SERVICE_NAME
+    - go mod tidy
+    - go mod vendor
+    - go test ./... -v || { echo "Tests failed for $SERVICE_NAME"; exit 1; }
+
+scan:
+  stage: scan
+  parallel:
+    matrix:
+      - SERVICE_NAME: authentication-service
+      - SERVICE_NAME: broker-service
+      - SERVICE_NAME: front-end
+      - SERVICE_NAME: listener-service
+      - SERVICE_NAME: logger-service
+      - SERVICE_NAME: mailer-service
+  tags:
+    - docker
+  before_script:
+    - export HOME=/root
+    - eval $(minikube -p minikube docker-env)
+  script:
+    - echo "🔎 Scanning Docker image for $SERVICE_NAME..."
+    - |
+      curl -sfL https://github.com/aquasecurity/trivy/releases/download/v0.34.0/trivy_0.34.0_Linux-64bit.tar.gz \
+      | tar xz -C /usr/local/bin
+    - trivy image --severity HIGH --exit-code 1 $SERVICE_NAME:$IMAGE_TAG || echo "Trivy scan failed for $SERVICE_NAME"; exit 1;
+      
 
 deploy:
   stage: deploy
