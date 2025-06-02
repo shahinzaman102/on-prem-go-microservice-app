@@ -1,4 +1,4 @@
-image: shahinzaman/runner-tools:latest
+image: shahinzaman/runner-tools:2.0.0
 
 variables:
   IMAGE_TAG: "$CI_COMMIT_SHORT_SHA"
@@ -52,11 +52,11 @@ test:
   tags:
     - docker
   script:
-    - echo "Running tests for $SERVICE_NAME..."
+    - echo "🧪 Running tests for $SERVICE_NAME..."
     - cd $SERVICE_NAME
     - go mod tidy
     - go mod vendor
-    - go test ./... -v || { echo "Tests failed for $SERVICE_NAME"; exit 1; }
+    - go test ./... -v || { echo "❌ Tests failed for $SERVICE_NAME"; exit 1; }
 
 scan:
   stage: scan
@@ -75,11 +75,7 @@ scan:
     - eval $(minikube -p minikube docker-env)
   script:
     - echo "🔎 Scanning Docker image for $SERVICE_NAME..."
-    - |
-      curl -sfL https://github.com/aquasecurity/trivy/releases/download/v0.34.0/trivy_0.34.0_Linux-64bit.tar.gz \
-      | tar xz -C /usr/local/bin
-    - trivy image --severity HIGH --exit-code 1 $SERVICE_NAME:$IMAGE_TAG || echo "Trivy scan failed for $SERVICE_NAME"; exit 1;
-      
+    - trivy image --severity HIGH --exit-code 1 $SERVICE_NAME:$IMAGE_TAG || { echo "❌ Trivy scan failed for $SERVICE_NAME"; exit 1; }
 
 deploy:
   stage: deploy
@@ -135,4 +131,3 @@ deploy:
   after_script:
     - echo "🧹 Cleaning up..."
     - rm -f ${CI_PROJECT_DIR}/config/k8s/*_deployment.yaml
-

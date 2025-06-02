@@ -1,8 +1,10 @@
 FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
+ENV MINIKUBE_VERSION=v1.36.0
+ENV GOLANG_VERSION=1.24.3
 
-# Install required packages
+# Install base dependencies
 RUN apt-get update && apt-get install -y \
     curl \
     bash \
@@ -12,6 +14,11 @@ RUN apt-get update && apt-get install -y \
     docker.io \
     gettext-base \
     ca-certificates \
+    # for test & scan dependencies
+    git \
+    make \
+    tar \
+    gzip \
     && rm -rf /var/lib/apt/lists/*
 
 # Install kubectl
@@ -20,9 +27,18 @@ RUN curl -LO "https://dl.k8s.io/release/$(curl -Ls https://dl.k8s.io/release/sta
     rm kubectl
 
 # Install Minikube
-ENV MINIKUBE_VERSION=v1.33.1
 RUN curl -Lo /usr/local/bin/minikube https://storage.googleapis.com/minikube/releases/${MINIKUBE_VERSION}/minikube-linux-amd64 && \
     chmod +x /usr/local/bin/minikube
+
+# Install Go (for test & scan dependencies)
+RUN curl -LO https://golang.org/dl/go${GOLANG_VERSION}.linux-amd64.tar.gz && \
+    tar -C /usr/local -xzf go${GOLANG_VERSION}.linux-amd64.tar.gz && \
+    rm go${GOLANG_VERSION}.linux-amd64.tar.gz
+ENV PATH="/usr/local/go/bin:$PATH"
+
+# Install Trivy (for test & scan dependencies)
+RUN curl -sfL https://github.com/aquasecurity/trivy/releases/download/v0.34.0/trivy_0.34.0_Linux-64bit.tar.gz \
+    | tar xz -C /usr/local/bin
 
 # Safe user setup
 ARG USER_UID=1010
