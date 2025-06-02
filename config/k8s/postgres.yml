@@ -78,7 +78,7 @@ spec:
               memory: "128Mi"
               cpu: "250m"
           command: ["/bin/bash", "-c", "docker-entrypoint.sh postgres && /tmp/init.sh"]
-
+          
           livenessProbe:
             exec:
               command:
