@@ -15,7 +15,7 @@ spec:
       # serviceAccountName: front-end-sa
       containers:
       - name: front-end
-        image: front-end:6a8101bd
+        image: front-end:$IMAGE_TAG
         imagePullPolicy: Never
         resources:
           requests:

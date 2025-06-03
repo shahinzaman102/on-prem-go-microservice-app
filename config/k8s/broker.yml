@@ -15,7 +15,7 @@ spec:
       # serviceAccountName: broker-service-sa
       containers:
       - name: broker-service
-        image: broker-service:6a8101bd
+        image: broker-service:$IMAGE_TAG
         imagePullPolicy: Never
         resources:
           requests:
