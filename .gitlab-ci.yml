@@ -76,7 +76,7 @@ scan:
     - docker
   script:
     - echo "🔎 Scanning Docker image for $SERVICE_NAME..."
-    - trivy image --severity HIGH --exit-code 1 --cache-dir $TRIVY_CACHE_DIR $SERVICE_NAME:$IMAGE_TAG
+    - trivy image --severity HIGH --exit-code 1 --cache-dir $TRIVY_CACHE_DIR --skip-update $SERVICE_NAME:$IMAGE_TAG
 
 deploy:
   stage: deploy

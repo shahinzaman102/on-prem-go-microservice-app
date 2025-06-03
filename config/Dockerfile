@@ -8,18 +8,8 @@ ENV TRIVY_CACHE_DIR=/cache/trivy
 
 # Install base dependencies
 RUN apt-get update && apt-get install -y \
-    curl \
-    bash \
-    iptables \
-    conntrack \
-    socat \
-    docker.io \
-    gettext-base \
-    ca-certificates \
-    git \
-    make \
-    tar \
-    gzip \
+    curl bash iptables conntrack socat docker.io gettext-base \
+    ca-certificates git make tar gzip \
     && rm -rf /var/lib/apt/lists/*
 
 # Install kubectl
@@ -41,8 +31,9 @@ ENV PATH="/usr/local/go/bin:$PATH"
 RUN curl -sfL https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz \
     | tar xz -C /usr/local/bin
 
-# Create cache dir and pre-fetch Trivy DB
-RUN mkdir -p $TRIVY_CACHE_DIR && trivy image --download-db-only --cache-dir $TRIVY_CACHE_DIR
+# Pre-fetch Trivy DB into a persistent path
+RUN mkdir -p ${TRIVY_CACHE_DIR} && \
+    trivy image --download-db-only --cache-dir ${TRIVY_CACHE_DIR}
 
 # Safe user setup
 ARG USER_UID=1010
