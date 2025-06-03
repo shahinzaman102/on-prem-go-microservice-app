@@ -131,3 +131,4 @@ deploy:
   after_script:
     - echo "🧹 Cleaning up..."
     - rm -f ${CI_PROJECT_DIR}/config/k8s/*_deployment.yaml
+
