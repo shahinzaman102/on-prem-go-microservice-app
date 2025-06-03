@@ -1,8 +1,9 @@
 # Run the script using Python3 --> 
 # ***(with the authenticated service account which has owner permission) --> 
 
-# cd /mnt/c/Users/shahi/.gcp
-# python3 12_install_prometheus_grafana.py
+# cd py_file_path
+# ex --> cd py_file_path : /home/shahinzaman/Documents/projects/on-prem-go-microservice-app/__task__before_after_ci_cd
+# python3 10_install_prometheus_grafana.py
 
 import subprocess
 
@@ -23,11 +24,7 @@ def run_command(command: list, description: str):
 
 def main():
     # Set `helm_chart_path` path as necessary --> 
-
-    # With "External LoadBalancer & IP stack":
-    # helm_chart_path = "/mnt/c/Users/shahi/Downloads/devops_source_8_4_final_deploy/config/__others/helm-monitoring-chart-load-blncer/helm-monitoring-chart"
-    # With "Domain-Ingress based setup":
-    helm_chart_path = "/mnt/c/Users/shahi/Downloads/devops_source_8_4_final_deploy/config/helm-monitoring-chart"
+    helm_chart_path = "/home/shahinzaman/Documents/projects/on-prem-go-microservice-app/config/helm-monitoring-chart"
     namespace = "monitoring"
 
     # Update Helm dependencies

@@ -14,7 +14,7 @@ service:
 # Service Account configuration
 serviceAccount:
   create: false
-  name: "monitoring-service-account"
+  # name: "monitoring-service-account"
   automount: true
   annotations: {}
 
@@ -25,7 +25,7 @@ image:
 
 kube-prometheus-stack:
   prometheus:
-    serviceAccountName: "monitoring-service-account"
+    # serviceAccountName: "monitoring-service-account"
     service:
       type: NodePort
       port: 9090
@@ -71,7 +71,7 @@ kube-prometheus-stack:
       timeoutSeconds: 10
 
   grafana:
-    serviceAccountName: "monitoring-service-account"
+    # serviceAccountName: "monitoring-service-account"
     enabled: true
     service:
       type: NodePort
@@ -144,7 +144,12 @@ kube-prometheus-stack:
   metricsServer:
     enabled: false
 
-  additionalScrapeConfigs: {}
+  # additionalScrapeConfigs: {}
+  # additionalScrapeConfigs:
+  #   enabled: true
+  #   external:
+  #     name: cadvisor-scrape-config
+  #     key: scrape-config.yaml
 
 autoscaling:
   enabled: false
@@ -152,10 +157,7 @@ autoscaling:
 ingress:
   enabled: true
   annotations:
-    kubernetes.io/ingress.global-static-ip-name: "reserved-monitoring-ip"
-    networking.gke.io/managed-certificates: monitoring-cert
-    kubernetes.io/ingress.class: "gce"
-    ingress.gcp.kubernetes.io/https-redirect: "true"
+    nginx.ingress.kubernetes.io/use-regex: "true"
   hosts:
     - host: prometheus.microsvc.net
       paths:
