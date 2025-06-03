@@ -3,6 +3,8 @@ FROM ubuntu:24.04
 ENV DEBIAN_FRONTEND=noninteractive
 ENV MINIKUBE_VERSION=v1.36.0
 ENV GOLANG_VERSION=1.24.3
+ENV TRIVY_VERSION=0.34.0
+ENV TRIVY_CACHE_DIR=/cache/trivy
 
 # Install base dependencies
 RUN apt-get update && apt-get install -y \
@@ -14,7 +16,6 @@ RUN apt-get update && apt-get install -y \
     docker.io \
     gettext-base \
     ca-certificates \
-    # for test & scan dependencies
     git \
     make \
     tar \
@@ -30,18 +31,18 @@ RUN curl -LO "https://dl.k8s.io/release/$(curl -Ls https://dl.k8s.io/release/sta
 RUN curl -Lo /usr/local/bin/minikube https://storage.googleapis.com/minikube/releases/${MINIKUBE_VERSION}/minikube-linux-amd64 && \
     chmod +x /usr/local/bin/minikube
 
-# Install Go (for test & scan dependencies)
+# Install Go
 RUN curl -LO https://golang.org/dl/go${GOLANG_VERSION}.linux-amd64.tar.gz && \
     tar -C /usr/local -xzf go${GOLANG_VERSION}.linux-amd64.tar.gz && \
     rm go${GOLANG_VERSION}.linux-amd64.tar.gz
 ENV PATH="/usr/local/go/bin:$PATH"
 
-# Install Trivy (for test & scan dependencies)
-RUN curl -sfL https://github.com/aquasecurity/trivy/releases/download/v0.34.0/trivy_0.34.0_Linux-64bit.tar.gz \
+# Install Trivy
+RUN curl -sfL https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz \
     | tar xz -C /usr/local/bin
 
-# Pre-download Trivy DB
-RUN trivy image --download-db-only
+# Create cache dir and pre-fetch Trivy DB
+RUN mkdir -p $TRIVY_CACHE_DIR && trivy image --download-db-only --cache-dir $TRIVY_CACHE_DIR
 
 # Safe user setup
 ARG USER_UID=1010
@@ -57,8 +58,5 @@ RUN \
     else \
     echo "User '${USERNAME}' or UID ${USER_UID} already exists. Skipping useradd."; \
     fi
-
-# Don't switch user here — let GitLab control that
-# USER ${USERNAME}
 
 CMD ["/bin/bash"]
