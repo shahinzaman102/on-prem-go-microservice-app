@@ -12,7 +12,6 @@ spec:
       labels:
         app: logger-service
     spec:
-      # serviceAccountName: logger-service-sa
       containers:
       - name: logger-service
         image: logger-service:$IMAGE_TAG

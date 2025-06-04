@@ -12,7 +12,6 @@ spec:
       labels:
         app: listener-service
     spec:
-      # serviceAccountName: listener-service-sa
       containers:
       - name: listener-service
         image: listener-service:$IMAGE_TAG

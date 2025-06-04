@@ -12,7 +12,6 @@ spec:
       labels:
         app: mailer-service
     spec:
-      # serviceAccountName: mailer-service-sa
       containers:
       - name: mailer-service
         image: mailer-service:$IMAGE_TAG

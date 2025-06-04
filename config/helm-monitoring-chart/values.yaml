@@ -144,12 +144,7 @@ kube-prometheus-stack:
   metricsServer:
     enabled: false
 
-  # additionalScrapeConfigs: {}
-  # additionalScrapeConfigs:
-  #   enabled: true
-  #   external:
-  #     name: cadvisor-scrape-config
-  #     key: scrape-config.yaml
+  additionalScrapeConfigs: {}
 
 autoscaling:
   enabled: false

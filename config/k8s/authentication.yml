@@ -12,7 +12,6 @@ spec:
       labels:
         app: authentication-service
     spec:
-      # serviceAccountName: authentication-service-sa
       containers:
         - name: authentication-service
           image: authentication-service:$IMAGE_TAG

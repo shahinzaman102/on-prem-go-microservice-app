@@ -1,8 +1,9 @@
 # Run the script using Python3 --> 
-# ***(with the authenticated service account which has owner permission) --> 
 
 # cd py_file_path
-# ex --> cd py_file_path : /home/shahinzaman/Documents/projects/on-prem-go-microservice-app/__task__before_after_ci_cd
+# ex "py_file_path" --> 
+# cd py_file_path : /home/shahinzaman/Documents/projects/on-prem-go-microservice-app/__task__before_after_ci_cd
+
 # python3 10_install_prometheus_grafana.py
 
 import subprocess
