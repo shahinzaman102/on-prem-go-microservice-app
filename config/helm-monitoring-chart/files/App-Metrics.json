@@ -413,7 +413,7 @@
                     "title": "CPU Usage",
                     "targets": [
                         {
-                            "expr": "rate(container_cpu_usage_seconds_total{container=\"authentication-service\"}[1m])",
+                            "expr": "rate(container_cpu_usage_seconds_total{pod=~'authentication-service-.*'}[1m])",
                             "legendFormat": "CPU Usage",
                             "refId": "D",
                             "datasource": "Prometheus"
@@ -437,7 +437,7 @@
                     "title": "Memory Usage",
                     "targets": [
                         {
-                            "expr": "(container_memory_working_set_bytes{container=\"authentication-service\"}) / 1024 / 1024",
+                            "expr": "container_memory_working_set_bytes{pod=~'authentication-service-.*'} / 1024 / 1024",
                             "legendFormat": "Memory Usage",
                             "refId": "E",
                             "datasource": "Prometheus"
@@ -590,7 +590,7 @@
                     "title": "CPU Usage",
                     "targets": [
                         {
-                            "expr": "rate(container_cpu_usage_seconds_total{container=\"broker-service\"}[1m])",
+                            "expr": "rate(container_cpu_usage_seconds_total{pod=~'broker-service-.*'}[1m])",
                             "legendFormat": "CPU Usage",
                             "refId": "G",
                             "datasource": "Prometheus"
@@ -614,7 +614,7 @@
                     "title": "Memory Usage",
                     "targets": [
                         {
-                            "expr": "(container_memory_working_set_bytes{container=\"broker-service\"}) / 1024 / 1024",
+                            "expr": "container_memory_working_set_bytes{pod=~'broker-service-.*'} / 1024 / 1024",
                             "legendFormat": "Memory Usage MB",
                             "refId": "H",
                             "datasource": "Prometheus"
@@ -767,7 +767,7 @@
                     "title": "CPU Usage",
                     "targets": [
                         {
-                            "expr": "rate(container_cpu_usage_seconds_total{container=\"front-end\"}[1m])",
+                            "expr": "rate(container_cpu_usage_seconds_total{pod=~'front-end-.*'}[1m])",
                             "legendFormat": "CPU Usage",
                             "refId": "G",
                             "datasource": "Prometheus"
@@ -787,7 +787,7 @@
                     "title": "Memory Usage",
                     "targets": [
                         {
-                            "expr": "(container_memory_working_set_bytes{container=\"front-end\"}) / 1024 / 1024",
+                            "expr": "container_memory_working_set_bytes{pod=~'front-end-.*'} / 1024 / 1024",
                             "legendFormat": "Memory Usage",
                             "refId": "H",
                             "datasource": "Prometheus"
@@ -947,7 +947,7 @@
                     "title": "CPU Usage",
                     "targets": [
                         {
-                            "expr": "rate(container_cpu_usage_seconds_total{container=\"authentication-service\"}[1m])",
+                            "expr": "rate(container_cpu_usage_seconds_total{pod=~'listener-service-.*'}[1m])",
                             "legendFormat": "CPU Usage",
                             "refId": "G",
                             "datasource": "Prometheus"
@@ -971,7 +971,7 @@
                     "title": "Memory Usage",
                     "targets": [
                         {
-                            "expr": "(container_memory_working_set_bytes{container=\"authentication-service\"}) / 1024 / 1024",
+                            "expr": "container_memory_working_set_bytes{pod=~'listener-service-.*'} / 1024 / 1024",
                             "legendFormat": "Memory Usage",
                             "refId": "H",
                             "datasource": "Prometheus"
@@ -1110,7 +1110,7 @@
                     "title": "CPU Usage",
                     "targets": [
                         {
-                            "expr": "rate(container_cpu_usage_seconds_total{container=\"logger-service\"}[1m]) * 100",
+                            "expr": "rate(container_cpu_usage_seconds_total{pod=~'logger-service-.*'}[1m])",
                             "legendFormat": "CPU Usage",
                             "refId": "F",
                             "datasource": "Prometheus"
@@ -1134,7 +1134,7 @@
                     "title": "Memory Usage (MB)",
                     "targets": [
                         {
-                            "expr": "(container_memory_working_set_bytes{container=\"logger-service\"}) / 1024 / 1024",
+                            "expr": "container_memory_working_set_bytes{pod=~'logger-service-.*'} / 1024 / 1024",
                             "legendFormat": "Memory Usage",
                             "refId": "G",
                             "datasource": "Prometheus"
@@ -1229,7 +1229,7 @@
                     "title": "CPU Usage",
                     "targets": [
                         {
-                            "expr": "rate(container_cpu_usage_seconds_total{container=\"mailer-service\"}[1m]) * 100",
+                            "expr": "rate(container_cpu_usage_seconds_total{pod=~'mailer-service-.*'}[1m])",
                             "legendFormat": "CPU Usage",
                             "refId": "D",
                             "datasource": "Prometheus"
@@ -1253,7 +1253,7 @@
                     "title": "Memory Usage (MB)",
                     "targets": [
                         {
-                            "expr": "(container_memory_working_set_bytes{container=\"mailer-service\"}) / 1024 / 1024",
+                            "expr": "container_memory_working_set_bytes{pod=~'mailer-service-.*'} / 1024 / 1024",
                             "legendFormat": "Memory Usage",
                             "refId": "E",
                             "datasource": "Prometheus"
