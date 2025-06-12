@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: listener-service
-        image: listener-service:$IMAGE_TAG
+        image: localhost:5000/listener-service:$IMAGE_TAG
         imagePullPolicy: Never
         resources:
           requests:

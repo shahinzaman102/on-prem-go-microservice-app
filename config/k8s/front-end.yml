@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: front-end
-        image: front-end:$IMAGE_TAG
+        image: localhost:5000/front-end:$IMAGE_TAG
         imagePullPolicy: Never
         resources:
           requests:

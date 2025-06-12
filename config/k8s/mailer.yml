@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: mailer-service
-        image: mailer-service:$IMAGE_TAG
+        image: localhost:5000/mailer-service:$IMAGE_TAG
         imagePullPolicy: Never
         resources:
           requests:

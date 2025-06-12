@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: logger-service
-        image: logger-service:$IMAGE_TAG
+        image: localhost:5000/logger-service:$IMAGE_TAG
         imagePullPolicy: Never
         resources:
           requests:
