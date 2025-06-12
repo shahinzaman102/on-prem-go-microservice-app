@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: authentication-service
-          image: localhost:5000/authentication-service:$IMAGE_TAG
+          image: authentication-service:$IMAGE_TAG
           imagePullPolicy: Never
           resources:
             requests:

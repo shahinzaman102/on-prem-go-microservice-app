@@ -20,7 +20,8 @@ before_script:
   - mkdir -p /home/shahinzaman
   - ln -s /root/.minikube /home/shahinzaman/.minikube || true
   - ln -s /root/.kube /home/shahinzaman/.kube || true
-  - echo "🧩 Using Minikube registry add-on (multi-node safe)"
+  - eval $(minikube -p minikube docker-env)
+  - echo "DOCKER_HOST is $DOCKER_HOST"
   - docker info
   - docker ps
 
@@ -38,8 +39,7 @@ build:
     - docker
   script:
     - echo "🔨 Building $SERVICE_NAME..."
-    - docker build -t localhost:5000/$SERVICE_NAME:$IMAGE_TAG "$CI_PROJECT_DIR/$SERVICE_NAME"
-    - docker push localhost:5000/$SERVICE_NAME:$IMAGE_TAG
+    - docker build -t $SERVICE_NAME:$IMAGE_TAG "$CI_PROJECT_DIR/$SERVICE_NAME"
   after_script:
     - docker system prune -f --volumes
 
@@ -76,7 +76,7 @@ scan:
     - docker
   script:
     - echo "🔎 Scanning Docker image for $SERVICE_NAME..."
-    - trivy image --severity HIGH --exit-code 1 --cache-dir $TRIVY_CACHE_DIR --skip-update localhost:5000/$SERVICE_NAME:$IMAGE_TAG
+    - trivy image --severity HIGH --exit-code 1 --cache-dir $TRIVY_CACHE_DIR --skip-update $SERVICE_NAME:$IMAGE_TAG
 
 deploy:
   stage: deploy
