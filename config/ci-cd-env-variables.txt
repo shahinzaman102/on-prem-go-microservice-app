@@ -1,0 +1,23 @@
+
+MAIL_PASSWORD : password
+
+MAIL_USERNAME : johnsmith
+
+MONGO_INITDB_ROOT_PASSWORD : password
+
+MONGO_INITDB_ROOT_USERNAME : admin
+
+PGADMIN_PASSWORD : admin
+
+PGADMIN_USER : admin@example.com
+
+POSTGRES_DB : users
+
+POSTGRES_PASSWORD : password
+
+POSTGRES_USER : postgres
+
+USER_EMAIL : admin@example.com
+
+USER_PASSWORD : $2a$12$1zGLuYDDNvATh4RA4avbKuheAMpb1svexSzrQm7up.bnpwQHs0jNe
+					Note: (Unselect) --> Expand variable reference

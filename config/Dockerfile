@@ -1,3 +1,6 @@
+# docker build -t shahinzaman/runner-tools:2.0.0 .
+# docker push shahinzaman/runner-tools:2.0.0
+
 FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
