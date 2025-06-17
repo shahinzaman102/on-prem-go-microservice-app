@@ -1,0 +1,323 @@
+Manual one time Task after ci/cd:
+=================================
+
+---Check all the built Docker images by the CI/CD in the Local Minikube Environment
+
+    - Use the below commands 🡪 
+        minikube ssh
+        docker images
+
+---Check the current Kubernetes context in Terminal 🡪 kubectl config current-context
+
+    We should see "minikube" - means we’re on the correct context.
+    Note: If multiple kubernetes contexts are configured, and we need to switch to "minikube" context then 🡪 
+            - First, list all available Kubernetes contexts 🡪 kubectl config get-contexts
+            - Then, switch to the "minikube" context using 🡪 kubectl config use-context minikube
+
+---Checking & Validating the app resources
+
+    - Using Terminal (will just check the main resources using Terminal commands) 🡪 
+        kubectl get svc    kubectl get pods    kubectl get ing
+    
+    - Using the Dashboard 🡪 
+        minikube addons enable dashboard
+        minikube dashboard  [This will Trigger and auto open the dashboard on a new browser tab]
+        
+        Note: Keep this terminal session open as long as we want the Kubernetes dashboard to stay active.
+    
+---Accessing & Testing the App Locally
+
+    - First Update the Local Server's Host file before accessing the app
+        - Find the "Private_IP_of_App_Server" using the command 🡪 minikube ip
+        - Then, open Host file with nano, using the command 🡪 sudo nano /etc/hosts
+        - Then, update the Host file like below 🡪 
+
+            <Private_IP_of_App_Server> registered_root_domain   🡪  e.g. 192.168.49.2 microsvc.net
+            
+            Note: we can also use an unregistered_domain (e.g. microsvc.test) while testing with insecure connection (http)
+            
+            Now, Save the file with Ctrl + o, press Enter, then exit with Ctrl + x.
+
+    - Now, Access the app's domain using Server's Local Browser with insecure http connection e.g. http://microsvc.net
+    - Test the functionalities - all should be ok..
+    - We can also access [as we deployed the k8s configs] : Postgres UI, MongoDB UI, RabbitMQ UI, MailHog UI - 
+      and also test the app's "live-logs" - according to the section 🡪 10. Testing the Application from Browser & Terminal - 
+      [listed in the project file named 🡪 "go-microservice-app-gcp/__task__before_after_ci_cd/9___manual_oneTime_task_after_ci-cd.txt"].
+
+---Installing & Validating HPA 
+
+  - Set the config-folder path like this 🡪 cd /home/shahinzaman/Documents/projects/on-prem-go-microservice-app/config
+  - Then run 🡪 kubectl apply -f hpa-config.yml
+  - Check the status 🡪 kubectl get hpa
+  - Validate : 
+    - Apply some load from the client [For this, we can use the Test Auth button, since it triggers - 
+      a relatively heavier container—making it easier to generate noticeable load quickly.]
+    - Then, monitor the hpa from Terminal 🡪 
+        kubectl get hpa
+        kubectl get pods
+
+--- Enable Metrics Server Before Deploying the Monitoring Stack
+
+    - Enable the minikube add-on 🡪 minikube addons enable metrics-server
+    - Check the enabled add-on list to ensure 🡪 minikube addons list
+    - Check the status of the pods for metrics server 🡪 kubectl -n kube-system get pods | grep metrics
+        - it should show the status of pod 🡪 0/1 pod running  [which means there's an issue..]
+    - Fix the issue :  
+    - First change the default editor to use “nano” for kubectl, using command 🡪 export KUBE_EDITOR=nano
+    - Now, Edit the deployment file using nano 🡪 kubectl -n kube-system edit deployment metrics-server
+    - Now, to the containers block, add this new argument "- --kubelet-insecure-tls" as like below 🡪 
+        
+        containers:
+        - name: metrics-server
+            args:
+            - --cert-dir=/tmp
+            - --secure-port=4443
+            - --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname
+            - --kubelet-insecure-tls
+
+    - Now, Save the file with Ctrl + o, press Enter, then exit with Ctrl + x.
+    - Now, restart metrics server deployment to apply the changes 🡪 kubectl -n kube-system rollout restart deployment metrics-server
+    - Now, check the status 🡪 kubectl -n kube-system get pods | grep metrics
+        - The Status should show 1/1 pod running. Means the metrics server is running & functioning properly.
+    - Now, we can check our Server's resource usage status as well with below commands :  
+        kubectl top nodes 🡪 shows the overall CPU and memory usage of the node running our cluster.
+        kubectl top pods 🡪 displays the CPU and memory usage for each running pod associated with our application.
+
+    Now that our Metrics Server is functioning properly, we can finally move forward with deploying our monitoring stack..
+
+---Deploying the Monitoring Stack
+
+    - First Ensure python3 is there [python3 comes pre-installed with Ubuntu LTS], using command 🡪 python3 --version
+    - Now, run the python file "1_install_prometheus_grafana.py" according to it's heading section..
+        - Check the status 🡪 kubectl get all -n monitoring   [all pods should run without any issue]
+    - Now, deploy the service monitors for the Monitoring Stack 🡪 
+        - First set the config folder path. Ex. command: cd /home/shahinzaman/Documents/projects/on-prem-go-microservice-app/config 
+        - Now deploy the service monitors 🡪 kubectl apply -f service-monitor-config.yml
+            - Check the status 🡪 kubectl get servicemonitors   [they should be listed if they are created]
+
+---Accessing & Testing the Monitoring Stack Locally
+
+    - First Update the Local Server's Host file before accessing the Monitoring stack
+        - Find the "Private_IP_of_App_Server" using the command 🡪 minikube ip
+        - Then, open Host file with nano, using the command 🡪 sudo nano /etc/hosts
+        - Then, update the Host file like below 🡪 
+
+            <Private_IP_of_App_Server> registered_root_domain     🡪  e.g. 192.168.49.2 microsvc.net
+            <Private_IP_of_App_Server> subdomain_for_prometheus   🡪  e.g. 192.168.49.2 prometheus.microsvc.net
+            <Private_IP_of_App_Server> subdomain_for_grafana      🡪  e.g. 192.168.49.2 grafana.microsvc.net
+            
+            Note: we can also use an unregistered_domain & subdomains (e.g. microsvc.test, prometheus.microsvc.net, - 
+                    grafana.microsvc.net) while testing with insecure connection (http)
+            
+            Now, Save the file with Ctrl + o, press Enter, then exit with Ctrl + x.
+
+    - Now, Access the subdomains (for prometheus & grafana) using Server's Local Browser with insecure http connection - 
+      e.g. http://prometheus.microsvc.net, http://grafana.microsvc.net [for grafana 🡪 username: admin, password: prom-operator]
+    
+    - Test the functionalities like 🡪 
+        - In prometheus : servicemonitors are up or not [this ensures prometheus is scrapping metrics correctly]
+        - In grafana: All the default dashboards & custom dashboards (after importing from : config/helm-monitoring-chart/file/..) - 
+          are instrumenting dashboard properly. And after configuring the alerting is working properly along with Slack.
+        
+        For this we can follow the detailed guide from the sections 🡪 
+            12. Testing the Monitoring stack from Browser
+            13. Setting up notification channel for Grafana to receive alerts from Dashboards
+            14. Creating Alerting Rule in a Grafana Dashboard
+        [listed in the project file named 🡪 "go-microservice-app-gcp/__task__before_after_ci_cd/9___manual_oneTime_task_after_ci-cd.txt"].
+
+---Expose App Securely to Internet via Cloudflare
+
+    - Install cloudflared:
+        install cloudflared via the Cloudflare Package Repository 🡪 
+            https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/
+        Debian Based Distribution (Recommended) 🡪 https://pkg.cloudflare.com/index.html
+
+        cloudflared version
+
+    - Domain Provider (for our case: SqureSpace Domains) 🡪 DNS 🡪 DNS Settings 🡪 Ensure there's "No custom records"
+        This is important because we'll have add custom records to Cloudflare and have to use DNS servers which they preferred.
+
+    - Access the Local Server's Host file 🡪 command: sudo nano /etc/hosts 🡪 Ensure there's "No custom records" 
+	  [means we've to remove the records which we've added so far for main-domain & sub-domains with Private_IP_of_App_Server]
+        This is important because the custom host entry bypasses DNS resolution. If we leave it, the browser will keep - 
+        resolving the domain to the local IP address directly, skipping Cloudflare — which means we won’t be able to verify - 
+        whether the HTTPS connection is working properly through Cloudflare’s secure tunnel.
+
+    - Cloudflare : https://www.cloudflare.com/ 🡪 Start for free 🡪 
+        - Account Home 🡪 
+            - Add a domain 🡪 
+                - Ensure the default selection : Quick scan for DNS records
+                - Enter an existing domain : microsvc.net
+                - Continoue
+                - Select a plan for microsvc.net
+                - Free : Select plan
+                - Continoue to activation 🡪 Confirm
+            - Last step: Update your nameservers to activate Cloudflare 🡪 Follow the instructions... 🡪 Continoue
+            
+            Now, We should receive an Email once our Domain is activated - we should receive it usually within a minute - 
+            if it's not then it then it can take more maximum up to 24 hours.
+
+            - To check the status of the Activation 🡪 
+                Overview 🡪 it'll show the status Active along side with the domain name
+                Account Home 🡪 it'll show the status Active along side with the domain name
+            - To check the applied SSL/TLS certificate 🡪 
+                Account Home 🡪 go for the domain overview 🡪 SSL/TLS
+            - To validate the Domain's Global availability & it's Applied NameServers 🡪 
+                https://dnschecker.org/all-dns-records-of-domain.php
+
+        - Now, Login to Cloudflare using Server's integrated Terminal 🡪 cloudflared login
+            On the form of "Authorize Cloudflare Tunnel" 🡪 Click anywhere on the row containing the Domain listing 🡪 Authorize
+
+            - If there's any "Authentication Error" - Fix that by : 
+                Backup or delete your current cert file 🡪 
+                    mv ~/.cloudflared/cert.pem ~/.cloudflared/cert.pem.bak
+                Re-login 🡪 
+                    cloudflared login
+
+        - Now, Add the Required CNAME DNS Records for the added Domain in Cloudflare 🡪 
+
+            cloudflared tunnel route dns microsvc-tunnel microsvc.net
+            cloudflared tunnel route dns microsvc-tunnel broker.microsvc.net
+            cloudflared tunnel route dns microsvc-tunnel www.microsvc.net
+            cloudflared tunnel route dns microsvc-tunnel prometheus.microsvc.net
+            cloudflared tunnel route dns microsvc-tunnel grafana.microsvc.netc
+
+            - If there's any failed attempt like 🡪 "Failed to add route: code: 1003, reason: Failed to create record microsvc.net" :
+                Cloudflare : Account Home 🡪 click on the Domain 🡪 Overview 🡪 DNS 🡪 Records 🡪 Select the existing Old Record 🡪 Delete
+
+        - Find the "Private_IP_of_App_Server" using the command 🡪 minikube ip  [let's assume the Private_IP_of_App_Server is 🡪 192.168.49.2]
+        - Then, create the Cloudflared configuration directory 🡪 sudo mkdir -p /etc/cloudflared
+        - Now, update the Cloudflared configuration file 🡪 sudo nano /etc/cloudflared/config.yml
+            
+            - The final updated config file content should look like below 🡪 
+
+                tunnel: microsvc-tunnel
+                credentials-file: /home/shahinzaman/.cloudflared/e5df3d73-e595-4bf5-827c-d385df3d4da4.json
+
+                ingress:
+                - hostname: microsvc.net
+                    service: http://192.168.49.2
+                - hostname: broker.microsvc.net
+                    service: http://192.168.49.2
+                - hostname: www.microsvc.net
+                    service: http://192.168.49.2
+                - hostname: prometheus.microsvc.net
+                    service: http://192.168.49.2
+                - hostname: grafana.microsvc.net
+                    service: http://192.168.49.2
+                - service: http_status:404
+        
+        - Add a Redirect rule in Cloudflare to Redirect from WWW to Root
+
+            - Cloudflare : Account Home 🡪 Overview 🡪 Rules 🡪 Overview 🡪 
+                           Templates (from right) 🡪 Redirect from WWW to Root : [Create a Rule] 🡪 
+
+            - Then, Fill form like below 🡪 
+
+            - Rule name : Redirect www to root
+            - Request URL : https://www.microsvc.net/*
+            - Target URL : https://microsvc.net/${1}
+                            ${1} preserves the path after the slash
+            - Status code: 301
+            - Preserve query string (checked)
+            - Deploy
+
+        - Start Tunnel 🡪 cloudflared tunnel run microsvc-tunnel
+
+          Note: Keep this terminal session running to keep the app’s domain accessible via Cloudflare.
+
+---Accessing & Testing the App & Monitoring Stack with Secure HTTPS Connection 
+    - Now, Access the app's domain using secure https connection e.g. microsvc.net 🡪 should be redirected to 🡪 https://microsvc.net
+    - Test the functionalities - all should be ok..
+    - And we can also perform & test all the development related task which we performed & test with our insecure http connection.
+
+    - Now, check Redirect from WWW to Root 🡪 www.microsvc.net 🡪 should be redirected to 🡪 https://microsvc.net
+
+    - Now, Access the monitoring stack with the subdomains (for prometheus & grafana) using secure https connection - 
+        e.g. prometheus.microsvc.net 🡪 should be redirected to 🡪 https://prometheus.microsvc.net, 
+        and  grafana.microsvc.net 🡪 should be redirected to 🡪 https://grafana.microsvc.net  
+                                                                  [for grafana 🡪 username: admin, password: prom-operator]
+    - Now, Test the functionalities with prometheus & grafana like we did before with the insecure http connection. [all should be ok..]
+
+---Explore Key Cloudflare Features Securing Our App [which are included in our free plan..]
+    - Cloudflare : Account Home 🡪 go for the domain overview 🡪 Security 🡪 Settings : 
+      at there we'll see the below security modules which are securing our App's Domain 🡪 
+
+- Web application exploits → This module will prevent our app from the newest threats out there on the Internet. [Automatically Enabled]
+- DDoS attacks → This module will prevent our app from DDoS attacks across the network and application layers automatically. [Automatically Enabled]
+- Bot traffic → This module will protect our domain from bad bots, including scraping and form spam. [Need configuration to Enable]
+- API abuse → This module will secure our API endpoints. [Automatically Enabled]
+- Client-side abuse → This module will keep track of our application’s Javascript dependencies and will notify us about any malicious scripts. [Need configuration to Enable]
+
+
+===============================================================================================================
+
+Destroying the Resources created so far on our Local PC
+--------------------------------------------------------
+
+- Delete the minikube environment 🡪 
+
+    minikube stop
+    minikube delete
+    rm -rf ~/.minikube
+
+    minikube status
+    
+    Note: This will also remove the entire Kubernetes cluster along with all the application resources within it.
+
+- Delete the built docker images outside of the minikube environment 🡪 
+
+	docker image prune -a
+    docker images
+
+- Uninstall minikube 🡪 
+	
+    sudo rm /usr/local/bin/minikube
+	rm -rf ~/.minikube
+	rm -rf ~/.kube  # Only if you're sure you don't need Kubernetes configs (e.g., from other clusters)
+	hash -r
+	
+    minikube version
+
+- Uninstall Docker Engine 🡪
+	
+    sudo apt-get purge -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+	sudo rm /etc/apt/sources.list.d/docker.list
+	sudo rm -rf /var/lib/docker
+	sudo rm -rf /var/lib/containerd
+	sudo apt-get update
+
+	docker version
+
+- Uninstall kubectl 🡪 
+
+	sudo rm /usr/local/bin/kubectl
+	rm -f ~/kubectl ~/kubectl.sha256
+	hash -r
+	
+	kubectl version --client
+
+- Uninstall GitLab Runner 🡪 
+
+	sudo gitlab-runner stop
+	sudo gitlab-runner uninstall
+
+	sudo gitlab-runner unregister --all-runners
+	
+	Check the status of gitlab-runner 🡪 
+		sudo nano /etc/gitlab-runner/config.toml
+		gitlab-runner verify
+	
+	sudo rm -f /usr/local/bin/gitlab-runner
+	sudo rm -rf /etc/gitlab-runner
+	sudo rm -rf ~/.gitlab-runner
+
+- Uninstall Cloudflare 🡪 
+
+	sudo apt-get remove --purge cloudflared
+	sudo rm /etc/apt/sources.list.d/cloudflared.list
+	ls /usr/share/keyrings/cloudflare-main.gpg
+	sudo rm /usr/share/keyrings/cloudflare-main.gpg
+	sudo apt-get update
+
+	cloudflared version

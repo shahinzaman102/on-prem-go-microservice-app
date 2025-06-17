@@ -1,0 +1,112 @@
+Manual one time Task before ci/cd:
+==================================
+
+---Prepare the Server Environment 🡪 
+
+    - Install Ubuntu LTS
+        Installing Ubuntu is straightforward, and there are plenty of detailed guides and -
+        tutorials available on YouTube if we need assistance.
+            Note: There's two options for the installations :
+                1. Dual-boot Ubuntu alongside the existing OS
+                2. Clean installation (recommended for server use)✅
+    
+    - Install Docker Engine on Ubuntu 🡪 
+	    https://docs.docker.com/engine/install/ubuntu/
+	    Install using the apt repository
+	    docker version
+    
+    - Install kubectl on Linux 🡪 
+        https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/
+        kubectl version --client
+    
+    - Install minikube on Linux 🡪 
+        https://minikube.sigs.k8s.io/docs/start/?arch=%2Flinux%2Fx86-64%2Fstable%2Fbinary+download
+        minikube version
+
+---To automate the Deployment by CI/CD, configure Gitlab Runner 🡪 
+    
+    - On GitLab Create a new project or have this one pushed at there..
+    - Go to Settings 🡪 then, CI/CD
+    - Disable the gear icon for Instance Runners (to avoid confusion, since we won’t be using shared runners)
+    - Click on “Create a project runner”
+    - Now, Create & configure our project runner :
+        - Enter “docker” as tag 🡪 this will help match jobs with this runner.
+        - For "Runner description" & "Maximum job timeout" - we can leave these blank as default - these are optional
+        - Create runner 
+        - Now, Install and Register the runner on to the Local Machine by following the provided steps :
+            - To "Install GitLab Runner" : run the commands specified in the Terminal
+            
+            - To "Register the runner" : run the command specified in Step 1
+                Note: add sudo before the command to Register the runner with the default root user. - 
+                So that we don't need to switch user afterwards while accessing & managing the created resources by the CI/CD.
+                
+                After running the command to Register the Runner, it'll ask info for configurations - provide the below :  
+                    
+                    https://gitlab.com/             🡪 as instance url
+                    gitlab-runner-1                 🡪 as runner name for the config 
+                    docker                          🡪 executor environment name
+                    shahinzaman/runner-tools:2.0.0  🡪 executor environment image name
+
+            - To "Start & Run the Runner" : run the command specified in Step 3
+                Note: add sudo before the command to Start & Run the Runner with the default root user. - 
+                So that we don't need to switch user afterwards while accessing & managing the created resources by the CI/CD.
+
+                - We can safely exit the process using Ctrl+C. At this point, the runner should be up and running. Verify status 🡪 
+                    gitlab-runner status 🡪 This should show the service status is Running.
+                    gitlab-runner verify 🡪 This should show the the runner status active that means the runner is 
+                                           properly registered and ready to accept and execute CI/CD jobs.
+                    Verify status from GitLab also 🡪 it should show the Runner status active that means the runner is 
+                                                     ready to accept and execute CI/CD jobs.
+
+    - Update the GitLab Runner configuration file (config.toml) to apply the correct settings 🡪 
+        - In Terminal run the command : sudo nano /etc/gitlab-runner/config.toml
+        - Now, turn privileged = false to true 🡪 [privileged = true]
+        - Replace the line 🡪 volumes = ["/cache"]
+        - with 🡪 
+            network_mode = "host"
+            volumes = [
+            "/var/run/docker.sock:/var/run/docker.sock",
+            "/home/shahinzaman/.kube:/root/.kube",
+            "/home/shahinzaman/.minikube:/root/.minikube",
+            "/cache"
+            ]
+        - Save the file with ctrl + O then Enter – and exit with ctrl + x.
+
+---Perform the below Tasks before running CI/CD 🡪
+
+    - clone the project : on-prem-go-microservice-app
+        - Clone command 🡪 git clone <gitlab_project's_https_url>
+    
+    - create project access token : on-prem-go-microservice-app
+        - To create : Settings 🡪 Access token 🡪 Add new token 
+          [we can tick mark all for the Developer role] 🡪 then, Create project access token.
+    
+        - collect the access token to use it later 🡪 
+            - to set the remote origin for local git.
+            - as the password while running the ci pipeline for the automatic deployment of our app while pushing the project to GitLab.
+    
+    - Add the ci/cd env variables listed in the text file (config/ci-cd-env-variables.txt)
+        Note: (Unselect) 🡪 Expand variable reference for the variable "USER_PASSWORD".
+
+    - Initialize Minikube Environment [using the below commands] 🡪 
+        - Start the minikube environment 🡪 minikube start --driver=docker --memory=4096 --cpus=2
+        - Check the status 🡪 minikube profile list
+                             minikube status
+        - Enable an add-on called “ingress” 🡪 minikube addons enable ingress
+        - Check the status of the ingress controller 🡪 kubectl get pods -n ingress-nginx
+        - Enable another add-on called “dashboard” 🡪 minikube addons enable dashboard
+        - Open the dashboard in browser 🡪 minikube dashboard
+            Note: Using this dashboard - we'll be able to check the status of the app resources
+
+---Push the code - trigger the pipeline...
+Example commands to push & trigger: (in terminal from project root directory)
+
+   git remote set-url origin https://access_token_from_gitlab@gitlab.com/shahinzaman102/on-prem-go-microservice-app.git
+      note: don't forget to replace: "access_token_from_gitlab" with the actual token which we did create before & - 
+            also the url with: "Clone with HTTPS"
+   git add .
+   git commit -m "commit..."
+   git push
+
+To monitor the running pipeline - visit: the project in GitLab 🡪 
+Build 🡪 Pipelines 🡪 visit the current running one and so on..
