@@ -264,6 +264,8 @@ Destroying the Resources created so far on our Local PC
     minikube status
     
     Note: This will also remove the entire Kubernetes cluster along with all the application resources within it.
+          Means it will remove the whole Minikube Environment 🡪 which includes (Kubernetes cluster and app resources
+          within it and also all the built images within it which were created during the ci/cd pipeline run.)
 
 - Delete the built docker images outside of the minikube environment 🡪 
 
