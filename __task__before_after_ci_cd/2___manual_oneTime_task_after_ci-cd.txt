@@ -239,7 +239,7 @@ Manual one time Task after ci/cd:
                                                                   [for grafana 🡪 username: admin, password: prom-operator]
     - Now, Test the functionalities with prometheus & grafana like we did before with the insecure http connection. [all should be ok..]
 
----Explore Key Cloudflare Features Securing Our App [which are included in our free plan..]
+---Explore Key Cloudflare Features Securing Our App along with the secure Tunnel [which are included in our free plan..]
     - Cloudflare : Account Home 🡪 go for the domain overview 🡪 Security 🡪 Settings : 
       at there we'll see the below security modules which are securing our App's Domain 🡪 
 
