@@ -1,3 +1,11 @@
+Note: - We can set the Visibility to "Masked" to hide the variable which will avoid printing the variable to the ci/cd pipeline logs.
+      - If we keep the Visibility as default selected which is "Visible", then it can be revealed to the ci/cd pipeline logs.
+	      but when "Visible" if the project is Private then there's shouldn't be any issue.
+	  - And if we find issue to "Masked" the variable, then we can increase the character length to 8 or more..
+	  - The variables which are used - most of them are the default credentials for the respective services - so we'll have be careful - 
+	    when we want to change any variable from here - we can get access issue later after port-forwarding...
+
+------------------------------------------------------
 
 MAIL_PASSWORD : password
 
@@ -19,5 +27,17 @@ POSTGRES_USER : postgres
 
 USER_EMAIL : admin@example.com
 
-USER_PASSWORD : $2a$12$1zGLuYDDNvATh4RA4avbKuheAMpb1svexSzrQm7up.bnpwQHs0jNe
-					Note: (Unselect) --> Expand variable reference
+USER_PASSWORD : use the "Base64 encode" form of the below password : 
+				$2a$12$1zGLuYDDNvATh4RA4avbKuheAMpb1svexSzrQm7up.bnpwQHs0jNe
+
+To encode the "USER_PASSWORD" in Base64 :
+
+	- In Terminal 🡪 
+
+		echo -n '$2a$12$1zGLuYDDNvATh4RA4avbKuheAMpb1svexSzrQm7up.bnpwQHs0jNe' | base64
+
+	- We’ll get something like in output 🡪
+
+		JDJhJDEyJDF6R0x1WURETnZBVGg0UkE0YXZiS3VoZUFNcGIxc3ZleFN6clFtN3VwLmJucHdRSHMwak5l
+	
+	- Then, Set this "output" as the "Value" for the "Key: USER_PASSWORD" in CI/CD.

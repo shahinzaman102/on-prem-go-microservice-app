@@ -148,11 +148,11 @@ Manual one time Task after ci/cd:
             - Add a domain 🡪 
                 - Ensure the default selection : Quick scan for DNS records
                 - Enter an existing domain : microsvc.net
-                - Continoue
+                - Continue
                 - Select a plan for microsvc.net
                 - Free : Select plan
-                - Continoue to activation 🡪 Confirm
-            - Last step: Update your nameservers to activate Cloudflare 🡪 Follow the instructions... 🡪 Continoue
+                - Continue to activation 🡪 Confirm
+            - Last step: Update your nameservers to activate Cloudflare 🡪 Follow the instructions... 🡪 Continue
             
             Now, We should receive an Email once our Domain is activated - we should receive it usually within a minute - 
             if it's not then it then it can take more maximum up to 24 hours.
@@ -161,7 +161,7 @@ Manual one time Task after ci/cd:
                 Overview 🡪 it'll show the status Active along side with the domain name
                 Account Home 🡪 it'll show the status Active along side with the domain name
             - To check the applied SSL/TLS certificate 🡪 
-                Account Home 🡪 go for the domain overview 🡪 SSL/TLS
+                Account Home 🡪 go for the domain overview 🡪 SSL/TLS - Note: This Certificate will be valid for all the sub-domains also..
             - To validate the Domain's Global availability & it's Applied NameServers 🡪 
                 https://dnschecker.org/all-dns-records-of-domain.php
 
@@ -180,7 +180,7 @@ Manual one time Task after ci/cd:
             cloudflared tunnel route dns microsvc-tunnel broker.microsvc.net
             cloudflared tunnel route dns microsvc-tunnel www.microsvc.net
             cloudflared tunnel route dns microsvc-tunnel prometheus.microsvc.net
-            cloudflared tunnel route dns microsvc-tunnel grafana.microsvc.netc
+            cloudflared tunnel route dns microsvc-tunnel grafana.microsvc.net
 
             - If there's any failed attempt like 🡪 "Failed to add route: code: 1003, reason: Failed to create record microsvc.net" :
                 Cloudflare : Account Home 🡪 click on the Domain 🡪 Overview 🡪 DNS 🡪 Records 🡪 Select the existing Old Record 🡪 Delete

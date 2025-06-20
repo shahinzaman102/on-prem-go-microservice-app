@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: front-end
-        image: front-end:$IMAGE_TAG
+        image: front-end:a8fca328
         imagePullPolicy: Never
         resources:
           requests:
