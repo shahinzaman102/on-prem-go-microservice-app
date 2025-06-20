@@ -2,8 +2,8 @@ Note: - We can set the Visibility to "Masked" to hide the variable which will av
       - If we keep the Visibility as default selected which is "Visible", then it can be revealed to the ci/cd pipeline logs.
 	      but when "Visible" if the project is Private then there's shouldn't be any issue.
 	  - And if we find issue to "Masked" the variable, then we can increase the character length to 8 or more..
-	  - The variables which are used - most of them are the default credentials for the respective services - so we'll have be careful - 
-	    when we want to change any variable from here - we can get access issue later after port-forwarding...
+	  - The variables which are used - most of them are the default credentials for the respective services - so we'll have to be careful - 
+	    when we want to change any variable "Key" or "Value" from here below - we can get access issue later after port-forwarding...
 
 ------------------------------------------------------
 

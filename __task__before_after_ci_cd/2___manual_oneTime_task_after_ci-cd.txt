@@ -28,11 +28,11 @@ Manual one time Task after ci/cd:
 ---Accessing & Testing the App Locally
 
     - First Update the Local Server's Host file before accessing the app
-        - Find the "Private_IP_of_App_Server" using the command 🡪 minikube ip
+        - Find the "Minikube Node IP" using the command 🡪 minikube ip
         - Then, open Host file with nano, using the command 🡪 sudo nano /etc/hosts
         - Then, update the Host file like below 🡪 
 
-            <Private_IP_of_App_Server> registered_root_domain   🡪  e.g. 192.168.49.2 microsvc.net
+            <Minikube_Node_IP> registered_root_domain   🡪  e.g. 192.168.49.2 microsvc.net
             
             Note: we can also use an unregistered_domain (e.g. microsvc.test) while testing with insecure connection (http)
             
@@ -49,39 +49,45 @@ Manual one time Task after ci/cd:
   - Set the config-folder path like this 🡪 cd /home/shahinzaman/Documents/projects/on-prem-go-microservice-app/config
   - Then run 🡪 kubectl apply -f hpa-config.yml
   - Check the status 🡪 kubectl get hpa
-  - Validate : 
-    - Apply some load from the client [For this, we can use the Test Auth button, since it triggers - 
-      a relatively heavier container—making it easier to generate noticeable load quickly.]
-    - Then, monitor the hpa from Terminal 🡪 
-        kubectl get hpa
-        kubectl get pods
+
+    Now, to validate the HPA, we do need Metrics Server..
 
 --- Enable Metrics Server Before Deploying the Monitoring Stack
 
     - Enable the minikube add-on 🡪 minikube addons enable metrics-server
     - Check the enabled add-on list to ensure 🡪 minikube addons list
     - Check the status of the pods for metrics server 🡪 kubectl -n kube-system get pods | grep metrics
-        - it should show the status of pod 🡪 0/1 pod running  [which means there's an issue..]
-    - Fix the issue :  
-    - First change the default editor to use “nano” for kubectl, using command 🡪 export KUBE_EDITOR=nano
-    - Now, Edit the deployment file using nano 🡪 kubectl -n kube-system edit deployment metrics-server
-    - Now, to the containers block, add this new argument "- --kubelet-insecure-tls" as like below 🡪 
-        
-        containers:
-        - name: metrics-server
-            args:
-            - --cert-dir=/tmp
-            - --secure-port=4443
-            - --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname
-            - --kubelet-insecure-tls
+        It show the status of pod 🡪 1/1 pod running within a minute..
+        If it's not - means if it shows 🡪 0/1 pod running
+            Fix the issue by:  
+                - First change the default editor to use “nano” for kubectl, using command 🡪 export KUBE_EDITOR=nano
+                - Now, Edit the deployment file using nano 🡪 kubectl -n kube-system edit deployment metrics-server
+                - Now, to the containers block, add this new argument "- --kubelet-insecure-tls" as like below 🡪 
+                    
+                    containers:
+                    - name: metrics-server
+                        args:
+                        - --cert-dir=/tmp
+                        - --secure-port=4443
+                        - --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname
+                        - --kubelet-insecure-tls
 
-    - Now, Save the file with Ctrl + o, press Enter, then exit with Ctrl + x.
-    - Now, restart metrics server deployment to apply the changes 🡪 kubectl -n kube-system rollout restart deployment metrics-server
-    - Now, check the status 🡪 kubectl -n kube-system get pods | grep metrics
-        - The Status should show 1/1 pod running. Means the metrics server is running & functioning properly.
-    - Now, we can check our Server's resource usage status as well with below commands :  
-        kubectl top nodes 🡪 shows the overall CPU and memory usage of the node running our cluster.
-        kubectl top pods 🡪 displays the CPU and memory usage for each running pod associated with our application.
+                - Now, Save the file with Ctrl + o, press Enter, then exit with Ctrl + x.
+                - Now, restart metrics server deployment to apply the changes 🡪 kubectl -n kube-system rollout restart deployment metrics-server
+                - Now, check the status 🡪 kubectl -n kube-system get pods | grep metrics
+                    - The Status should show 1/1 pod running. Means the metrics server is running & functioning properly.
+    
+    - Once the Metrics Server is running (1/1 pod running) 🡪
+        - We can check our Server's resource usage status as well with below commands :  
+            kubectl top nodes 🡪 shows the overall CPU and memory usage of the node running our cluster.
+            kubectl top pods 🡪 displays the CPU and memory usage for each running pod associated with our application.
+        
+        - And we can also now Validate the HPA : 
+            - Apply some load from the client [For this, we can use the Test Auth button, since it triggers - 
+              a relatively heavier container—making it easier to generate noticeable load quickly.]
+            - Then, monitor the hpa from Terminal 🡪 
+                kubectl get hpa
+                kubectl get pods
 
     Now that our Metrics Server is functioning properly, we can finally move forward with deploying our monitoring stack..
 
@@ -98,13 +104,13 @@ Manual one time Task after ci/cd:
 ---Accessing & Testing the Monitoring Stack Locally
 
     - First Update the Local Server's Host file before accessing the Monitoring stack
-        - Find the "Private_IP_of_App_Server" using the command 🡪 minikube ip
+        - Find the "Minikube Node IP" using the command 🡪 minikube ip
         - Then, open Host file with nano, using the command 🡪 sudo nano /etc/hosts
         - Then, update the Host file like below 🡪 
 
-            <Private_IP_of_App_Server> registered_root_domain     🡪  e.g. 192.168.49.2 microsvc.net
-            <Private_IP_of_App_Server> subdomain_for_prometheus   🡪  e.g. 192.168.49.2 prometheus.microsvc.net
-            <Private_IP_of_App_Server> subdomain_for_grafana      🡪  e.g. 192.168.49.2 grafana.microsvc.net
+            <"Minikube_Node_IP"> registered_root_domain     🡪  e.g. 192.168.49.2 microsvc.net
+            <"Minikube_Node_IP"> subdomain_for_prometheus   🡪  e.g. 192.168.49.2 prometheus.microsvc.net
+            <"Minikube_Node_IP"> subdomain_for_grafana      🡪  e.g. 192.168.49.2 grafana.microsvc.net
             
             Note: we can also use an unregistered_domain & subdomains (e.g. microsvc.test, prometheus.microsvc.net, - 
                     grafana.microsvc.net) while testing with insecure connection (http)
@@ -117,13 +123,26 @@ Manual one time Task after ci/cd:
     - Test the functionalities like 🡪 
         - In prometheus : servicemonitors are up or not [this ensures prometheus is scrapping metrics correctly]
         - In grafana: All the default dashboards & custom dashboards (after importing from : config/helm-monitoring-chart/file/..) - 
-          are instrumenting dashboard properly. And after configuring the alerting is working properly along with Slack.
+          are instrumenting properly or not. And after configuring the alerting in Custom Dashboards it's working properly along with Slack or not.
         
         For this we can follow the detailed guide from the sections 🡪 
             12. Testing the Monitoring stack from Browser
             13. Setting up notification channel for Grafana to receive alerts from Dashboards
             14. Creating Alerting Rule in a Grafana Dashboard
         [listed in the project file named 🡪 "go-microservice-app-gcp/__task__before_after_ci_cd/9___manual_oneTime_task_after_ci-cd.txt"].
+
+
+----Manual One time task before Exposing App Securely to Internet via Cloudflare
+
+    - Inside of the file config/k8s/front-end.yml, ensure the below env - as we're going to access our app securely with https 🡪 
+        env:
+            - name: BROKER_URL
+            value: "https://broker.microsvc.net"
+
+    - Now, deploy the updated front-end.yml file 🡪 
+        - First set the k8s folder path in Terminal. Ex. command: cd /home/shahinzaman/Documents/projects/on-prem-go-microservice-app/config/k8s 
+        - Now deploy the file from that path using 🡪 kubectl apply -f front-end.yml
+            - Check the status 🡪 kubectl get pods   [the pod should run (1/1) without any issue]
 
 ---Expose App Securely to Internet via Cloudflare
 
@@ -135,10 +154,10 @@ Manual one time Task after ci/cd:
         cloudflared version
 
     - Domain Provider (for our case: SqureSpace Domains) 🡪 DNS 🡪 DNS Settings 🡪 Ensure there's "No custom records"
-        This is important because we'll have add custom records to Cloudflare and have to use DNS servers which they preferred.
+        This is important because we'll have to add custom records to Cloudflare and have to use DNS servers which they prefer.
 
     - Access the Local Server's Host file 🡪 command: sudo nano /etc/hosts 🡪 Ensure there's "No custom records" 
-	  [means we've to remove the records which we've added so far for main-domain & sub-domains with Private_IP_of_App_Server]
+	  [means we've to remove the records which we've added so far for main-domain & sub-domains with Minikube_Node_IP]
         This is important because the custom host entry bypasses DNS resolution. If we leave it, the browser will keep - 
         resolving the domain to the local IP address directly, skipping Cloudflare — which means we won’t be able to verify - 
         whether the HTTPS connection is working properly through Cloudflare’s secure tunnel.
@@ -154,14 +173,14 @@ Manual one time Task after ci/cd:
                 - Continue to activation 🡪 Confirm
             - Last step: Update your nameservers to activate Cloudflare 🡪 Follow the instructions... 🡪 Continue
             
-            Now, We should receive an Email once our Domain is activated - we should receive it usually within a minute - 
-            if it's not then it then it can take more maximum up to 24 hours.
+            Now, We should receive an Email once our Domain is activated - we should receive it usually within couple of minutes - 
+            or in some special cases it can take even more - maximum up to 24 hours.
 
             - To check the status of the Activation 🡪 
                 Overview 🡪 it'll show the status Active along side with the domain name
                 Account Home 🡪 it'll show the status Active along side with the domain name
             - To check the applied SSL/TLS certificate 🡪 
-                Account Home 🡪 go for the domain overview 🡪 SSL/TLS - Note: This Certificate will be valid for all the sub-domains also..
+                Account Home 🡪 go for the domain overview 🡪 SSL/TLS - Note: This Certificate will be valid for all the sub-domains also.
             - To validate the Domain's Global availability & it's Applied NameServers 🡪 
                 https://dnschecker.org/all-dns-records-of-domain.php
 
@@ -174,6 +193,15 @@ Manual one time Task after ci/cd:
                 Re-login 🡪 
                     cloudflared login
 
+        - Now, Create the Cloudflare Tunnel before adding the DNS Records 🡪 
+
+            cloudflared tunnel create microsvc-tunnel
+
+            This will create a Credentials JSON file for the Tunnel like this 🡪 
+                /home/shahinzaman/.cloudflared/e5df3d73-e595-4bf5-827c-d385df3d4da4.json
+            Note: This credentials JSON file name should match the "credentials-file" inside of the Cloudflared configuration file - 
+                   while updating the Cloudflared configuration file in a below step.
+
         - Now, Add the Required CNAME DNS Records for the added Domain in Cloudflare 🡪 
 
             cloudflared tunnel route dns microsvc-tunnel microsvc.net
@@ -185,7 +213,7 @@ Manual one time Task after ci/cd:
             - If there's any failed attempt like 🡪 "Failed to add route: code: 1003, reason: Failed to create record microsvc.net" :
                 Cloudflare : Account Home 🡪 click on the Domain 🡪 Overview 🡪 DNS 🡪 Records 🡪 Select the existing Old Record 🡪 Delete
 
-        - Find the "Private_IP_of_App_Server" using the command 🡪 minikube ip  [let's assume the Private_IP_of_App_Server is 🡪 192.168.49.2]
+        - Find the "Minikube_Node_IP" using the command 🡪 minikube ip  [let's assume the Private_IP_of_App_Server is 🡪 192.168.49.2]
         - Then, create the Cloudflared configuration directory 🡪 sudo mkdir -p /etc/cloudflared
         - Now, update the Cloudflared configuration file 🡪 sudo nano /etc/cloudflared/config.yml
             
@@ -238,6 +266,8 @@ Manual one time Task after ci/cd:
         and  grafana.microsvc.net 🡪 should be redirected to 🡪 https://grafana.microsvc.net  
                                                                   [for grafana 🡪 username: admin, password: prom-operator]
     - Now, Test the functionalities with prometheus & grafana like we did before with the insecure http connection. [all should be ok..]
+
+    Note: if any domain doesn't redirect to the https then directly access the https url - i.e. https://prometheus.microsvc.net
 
 ---Explore Key Cloudflare Features Securing Our App along with the secure Tunnel [which are included in our free plan..]
     - Cloudflare : Account Home 🡪 go for the domain overview 🡪 Security 🡪 Settings : 
@@ -310,6 +340,7 @@ Destroying the Resources created so far on our Local PC
 		sudo nano /etc/gitlab-runner/config.toml
 		gitlab-runner verify
 	
+    # Remove remaining files and directories
 	sudo rm -f /usr/local/bin/gitlab-runner
 	sudo rm -rf /etc/gitlab-runner
 	sudo rm -rf ~/.gitlab-runner

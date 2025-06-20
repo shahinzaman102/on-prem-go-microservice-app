@@ -25,7 +25,6 @@ image:
 
 kube-prometheus-stack:
   prometheus:
-    # serviceAccountName: "monitoring-service-account"
     service:
       type: NodePort
       port: 9090
@@ -71,7 +70,6 @@ kube-prometheus-stack:
       timeoutSeconds: 10
 
   grafana:
-    # serviceAccountName: "monitoring-service-account"
     enabled: true
     service:
       type: NodePort
@@ -154,7 +152,7 @@ ingress:
   annotations:
     nginx.ingress.kubernetes.io/use-regex: "true"
   hosts:
-    - host: prometheus.microsvc.net
+    - host: prometheus.microsvc.net  # Update after registering a domain
       paths:
         - path: /
           pathType: Prefix
@@ -162,7 +160,7 @@ ingress:
             service:
               name: monitoring-kube-prometheus-prometheus
               port: 9090
-    - host: grafana.microsvc.net
+    - host: grafana.microsvc.net  # Update after registering a domain
       paths:
         - path: /
           pathType: Prefix

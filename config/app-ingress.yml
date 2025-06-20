@@ -8,7 +8,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: microsvc.net
+    - host: microsvc.net  # Update after registering a domain
       http:
         paths:
           - path: /
@@ -18,7 +18,7 @@ spec:
                 name: front-end
                 port:
                   number: 8081
-    - host: broker.microsvc.net
+    - host: broker.microsvc.net  # Update after registering a domain
       http:
         paths:
           - path: /

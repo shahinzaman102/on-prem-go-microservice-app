@@ -86,7 +86,6 @@ Manual one time Task before ci/cd:
             - as the password while running the ci pipeline for the automatic deployment of our app while pushing the project to GitLab.
     
     - Add the ci/cd env variables listed in the text file (config/ci-cd-env-variables.txt)
-        Note: (Unselect) 🡪 Expand variable reference for the variable "USER_PASSWORD".
 
     - Initialize Minikube Environment [using the below commands] 🡪 
         - Start the minikube environment 🡪 minikube start --driver=docker --memory=4096 --cpus=2
@@ -97,6 +96,11 @@ Manual one time Task before ci/cd:
         - Enable another add-on called “dashboard” 🡪 minikube addons enable dashboard
         - Open the dashboard in browser 🡪 minikube dashboard
             Note: Using this dashboard - we'll be able to check the status of the app resources
+
+    - Inside of the file config/k8s/front-end.yml, ensure the below env - as we'll first access our app locally with http 🡪 
+        env:
+          - name: BROKER_URL
+            value: "http://broker.microsvc.net"
 
 ---Push the code - trigger the pipeline...
 Example commands to push & trigger: (in terminal from project root directory)
