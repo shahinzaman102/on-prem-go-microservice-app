@@ -316,10 +316,16 @@ Destroying the Resources created so far on our Local PC
 
 - Uninstall Cloudflare 🡪 
 
-	sudo apt-get remove --purge cloudflared
-	sudo rm /etc/apt/sources.list.d/cloudflared.list
-	ls /usr/share/keyrings/cloudflare-main.gpg
-	sudo rm /usr/share/keyrings/cloudflare-main.gpg
-	sudo apt-get update
+    # Uninstall the package and repo
+    sudo apt-get remove --purge cloudflared
+    sudo rm /etc/apt/sources.list.d/cloudflared.list
+    sudo rm /usr/share/keyrings/cloudflare-main.gpg
+    sudo apt-get update
+
+    # Remove user configs and certs
+    rm -rf ~/.cloudflared
+
+    # Remove system-wide config
+    sudo rm -rf /etc/cloudflared
 
 	cloudflared version

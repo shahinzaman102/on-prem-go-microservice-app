@@ -4,7 +4,7 @@
 # ex "py_file_path" --> 
 # cd py_file_path : /home/shahinzaman/Documents/projects/on-prem-go-microservice-app/__task__before_after_ci_cd
 
-# python3 10_install_prometheus_grafana.py
+# python3 1_install_prometheus_grafana.py
 
 import subprocess
 
