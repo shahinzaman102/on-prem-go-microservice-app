@@ -1,0 +1,133 @@
+name: CI with Minikube
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+env:
+  IMAGE_TAG: ${{ github.sha }}
+  TRIVY_CACHE_DIR: /tmp/trivy
+
+jobs:
+  build:
+    runs-on: [self-hosted, minikube, docker]
+    strategy:
+      matrix:
+        SERVICE_NAME: [authentication-service, broker-service, front-end, listener-service, logger-service, mailer-service]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker Image inside Minikube
+        run: |
+          echo "🛠️ Setting up Docker to point to Minikube's daemon..."
+          eval $(minikube -p minikube docker-env)
+          
+          echo "🔨 Building ${{ matrix.SERVICE_NAME }}:${{ env.IMAGE_TAG }}..."
+          docker build -t ${{ matrix.SERVICE_NAME }}:${{ env.IMAGE_TAG }} ${{ matrix.SERVICE_NAME }}
+          
+          echo "✅ Image build complete. Listing images:"
+          docker images | grep ${{ matrix.SERVICE_NAME }}
+
+      - name: Clean up Docker
+        run: |
+          echo "🧹 Cleaning up unused Docker resources..."
+          eval $(minikube -p minikube docker-env)
+          docker system prune -f --volumes
+
+  test:
+    runs-on: [self-hosted, minikube, docker]
+    needs: build
+    strategy:
+      matrix:
+        SERVICE_NAME: [authentication-service, broker-service, front-end, listener-service, logger-service, mailer-service]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Go Tests
+        run: |
+          echo "🧪 Running tests for ${{ matrix.SERVICE_NAME }}..."
+          cd ${{ matrix.SERVICE_NAME }}
+          go mod tidy
+          go mod vendor
+          go test ./... -v
+
+  scan:
+    runs-on: [self-hosted, minikube, docker]
+    needs: build
+    strategy:
+      matrix:
+        SERVICE_NAME: [authentication-service, broker-service, front-end, listener-service, logger-service, mailer-service]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Trivy DB
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.TRIVY_CACHE_DIR }}
+          key: trivy-db-cache
+
+      - name: Scan Docker Image
+        run: |
+          echo "🔍 Scanning Docker image with Trivy..."
+          eval $(minikube -p minikube docker-env)
+          trivy image --severity HIGH --exit-code 1 --cache-dir $TRIVY_CACHE_DIR ${{ matrix.SERVICE_NAME }}:${{ env.IMAGE_TAG }}
+
+  deploy:
+    runs-on: [self-hosted, minikube, docker]
+    needs: [scan]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create Kubernetes Secrets
+        run: |
+          echo "🔐 Creating Kubernetes secrets from GitHub secrets..."
+
+          kubectl delete secret postgres-secrets --ignore-not-found
+          kubectl create secret generic postgres-secrets \
+            --from-literal=POSTGRES_USER="${{ secrets.POSTGRES_USER }}" \
+            --from-literal=POSTGRES_PASSWORD="${{ secrets.POSTGRES_PASSWORD }}" \
+            --from-literal=POSTGRES_DB="${{ secrets.POSTGRES_DB }}"
+
+          kubectl delete secret pgadmin-secrets --ignore-not-found
+          kubectl create secret generic pgadmin-secrets \
+            --from-literal=PGADMIN_USER="${{ secrets.PGADMIN_USER }}" \
+            --from-literal=PGADMIN_PASSWORD="${{ secrets.PGADMIN_PASSWORD }}"
+
+          kubectl delete secret mongo-secrets --ignore-not-found
+          kubectl create secret generic mongo-secrets \
+            --from-literal=MONGO_INITDB_ROOT_USERNAME="${{ secrets.MONGO_INITDB_ROOT_USERNAME }}" \
+            --from-literal=MONGO_INITDB_ROOT_PASSWORD="${{ secrets.MONGO_INITDB_ROOT_PASSWORD }}"
+
+          kubectl delete secret mailer-secrets --ignore-not-found
+          kubectl create secret generic mailer-secrets \
+            --from-literal=MAIL_USERNAME="${{ secrets.MAIL_USERNAME }}" \
+            --from-literal=MAIL_PASSWORD="${{ secrets.MAIL_PASSWORD }}"
+
+          kubectl delete secret user-secrets --ignore-not-found
+          kubectl create secret generic user-secrets \
+            --from-literal=USER_EMAIL="${{ secrets.USER_EMAIL }}" \
+            --from-literal=USER_PASSWORD="${{ secrets.USER_PASSWORD }}"
+
+      - name: Substitute Kubernetes manifests
+        run: |
+          echo "🌀 Substituting Kubernetes manifests..."
+          export IMAGE_TAG=${{ env.IMAGE_TAG }}
+          for file in ./config/k8s/*.yml; do
+            envsubst < "$file" > "${file%.yml}_deployment.yaml"
+          done
+
+      - name: Apply Kubernetes manifests
+        run: |
+          echo "🚀 Applying manifests to Minikube..."
+          for file in ./config/k8s/*_deployment.yaml; do
+            kubectl apply -f "$file" || exit 1
+          done
+
+      - name: Apply Ingress
+        run: |
+          echo "🌐 Applying app-ingress.yaml..."
+          kubectl apply -f ./config/app-ingress.yml
+
+      - name: Cleanup
+        run: rm -f ./config/k8s/*_deployment.yaml
