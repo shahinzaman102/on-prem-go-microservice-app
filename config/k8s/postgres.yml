@@ -12,34 +12,6 @@ spec:
       labels:
         app: postgres
     spec:
-      initContainers:
-        - name: fix-init-script-permissions
-          image: busybox
-          command:
-            - sh
-            - -c
-            - |
-              echo "Listing files in /docker-entrypoint-custom.d:"
-              ls -al /docker-entrypoint-custom.d
-              if [ -f /docker-entrypoint-custom.d/init.sh ]; then
-                echo "init.sh found, copying to /tmp/init.sh"
-                cp /docker-entrypoint-custom.d/init.sh /tmp/init.sh && chmod +x /tmp/init.sh;
-              else
-                echo "init.sh not found in /docker-entrypoint-custom.d" && exit 1;
-              fi
-          volumeMounts:
-            - mountPath: /docker-entrypoint-custom.d
-              name: custom-init-scripts
-            - mountPath: /tmp
-              name: custom-init-scripts-tmp
-          resources:
-            requests:
-              memory: "64Mi"
-              cpu: "100m"
-            limits:
-              memory: "128Mi"
-              cpu: "200m"
-
       containers:
         - name: postgres
           image: postgres:14.0
@@ -62,14 +34,12 @@ spec:
                   name: postgres-secrets
                   key: POSTGRES_DB
             - name: PGDATA
-              value: "/var/lib/postgresql/data_new"  # Forces a fresh initialization
+              value: "/var/lib/postgresql/data_new"
           volumeMounts:
             - mountPath: /var/lib/postgresql/data
               name: postgres-storage
             - mountPath: /docker-entrypoint-initdb.d
               name: postgres-init-scripts
-            - mountPath: /tmp
-              name: custom-init-scripts-tmp
           resources:
             requests:
               memory: "64Mi"
@@ -77,8 +47,6 @@ spec:
             limits:
               memory: "128Mi"
               cpu: "250m"
-          command: ["/bin/bash", "-c", "docker-entrypoint.sh postgres && /tmp/init.sh"]
-          
           livenessProbe:
             exec:
               command:
@@ -90,7 +58,6 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 60
             failureThreshold: 3
-
           readinessProbe:
             exec:
               command:
@@ -106,7 +73,7 @@ spec:
         - name: postgres-exporter
           image: prometheuscommunity/postgres-exporter:latest
           ports:
-            - containerPort: 9187  # Default metrics port
+            - containerPort: 9187
           env:
             - name: DATA_SOURCE_NAME
               value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres:5432/$(POSTGRES_DB)?sslmode=disable"
@@ -125,11 +92,6 @@ spec:
         - name: postgres-init-scripts
           configMap:
             name: postgres-init-scripts
-        - name: custom-init-scripts
-          configMap:
-            name: postgres-custom-init
-        - name: custom-init-scripts-tmp
-          emptyDir: {}
 
 ---
 
