@@ -118,12 +118,12 @@ jobs:
       - name: Substitute variables in configmap-users-sql.yml.template
         run: |
           echo "Substituting variables in configmap-users-sql.yml.template"
-          envsubst < ./configmap-users-sql.yml.template > ./configmap-users-sql.yml
+          envsubst < ./config/k8s/configmap-users-sql.yml.template > ./config/k8s/configmap-users-sql.yml
 
       - name: Apply ConfigMap with substituted values
         run: |
           echo "Applying ConfigMap postgres-init-scripts"
-          kubectl apply -f ./configmap-users-sql.yml
+          kubectl apply -f ./config/k8s/configmap-users-sql.yml
 
       - name: Substitute Kubernetes manifests
         run: |
@@ -145,5 +145,8 @@ jobs:
           echo "🌐 Applying app-ingress.yaml..."
           kubectl apply -f ./config/app-ingress.yml
 
-      - name: Cleanup
-        run: rm -f ./config/k8s/*_deployment.yaml
+      - name: Cleanup generated files
+        run: |
+          echo "🧹 Cleaning up generated deployment and config files..."
+          rm -f ./config/k8s/*_deployment.yaml
+          rm -f ./config/k8s/configmap-users-sql.yml
