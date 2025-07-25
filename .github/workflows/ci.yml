@@ -109,6 +109,22 @@ jobs:
             --from-literal=USER_EMAIL="${{ secrets.USER_EMAIL }}" \
             --from-literal=USER_PASSWORD="${{ secrets.USER_PASSWORD }}"
 
+      - name: Export USER_EMAIL and USER_PASSWORD env variables for envsubst
+        run: |
+          echo "Exporting USER_EMAIL and USER_PASSWORD for envsubst"
+          echo "USER_EMAIL=${{ secrets.USER_EMAIL }}" >> $GITHUB_ENV
+          echo "USER_PASSWORD=${{ secrets.USER_PASSWORD }}" >> $GITHUB_ENV
+
+      - name: Substitute variables in configmap-users-sql.yml.template
+        run: |
+          echo "Substituting variables in configmap-users-sql.yml.template"
+          envsubst < ./configmap-users-sql.yml.template > ./configmap-users-sql.yml
+
+      - name: Apply ConfigMap with substituted values
+        run: |
+          echo "Applying ConfigMap postgres-init-scripts"
+          kubectl apply -f ./configmap-users-sql.yml
+
       - name: Substitute Kubernetes manifests
         run: |
           echo "🌀 Substituting Kubernetes manifests..."

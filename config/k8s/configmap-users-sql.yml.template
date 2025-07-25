@@ -47,5 +47,6 @@ data:
     -- Insert admin user only if it does not already exist
     INSERT INTO public.users (email, first_name, last_name, password, user_active, created_at, updated_at)
     VALUES
+    # ('admin@example.com', 'Admin', 'User', '$2a$12$1zGLuYDDNvATh4RA4avbKuheAMpb1svexSzrQm7up.bnpwQHs0jNe', 1, '2022-03-14 00:00:00', '2022-03-14 00:00:00')
     ('${USER_EMAIL}', 'Admin', 'User', convert_from(decode('${USER_PASSWORD}', 'base64'), 'UTF8'), 1, '2022-03-14 00:00:00', '2022-03-14 00:00:00')
     ON CONFLICT (email) DO NOTHING;
