@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: broker-service
-        image: broker-service:a8fca328
+        image: broker-service:$IMAGE_TAG
         imagePullPolicy: Never
         resources:
           requests:
