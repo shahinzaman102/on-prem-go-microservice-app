@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/rpc"
 	"time"
@@ -224,8 +225,8 @@ func (app *Config) authenticate(w http.ResponseWriter, a AuthPayload) {
 		requestErrors.WithLabelValues("auth").Inc()
 		log.WithFields(logrus.Fields{
 			"status": response.StatusCode,
-		}).Error("Error calling authentication service")
-		app.ErrorJSON(w, errors.New("error calling auth service"))
+		}).Error("Unexpected error from authentication service")
+		app.ErrorJSON(w, fmt.Errorf("auth service error (status: %d)", response.StatusCode))
 		return
 	}
 
