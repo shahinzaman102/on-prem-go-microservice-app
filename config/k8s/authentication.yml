@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: authentication-service
-          image: redis-rate-limiting:2
+          image: authentication-service:$IMAGE_TAG
           imagePullPolicy: Never
           resources:
             requests:

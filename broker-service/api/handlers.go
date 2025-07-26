@@ -218,8 +218,10 @@ func (app *Config) authenticate(w http.ResponseWriter, a AuthPayload) {
 		}).Warn("Invalid credentials")
 		app.ErrorJSON(w, errors.New("invalid credentials"))
 		return
-	} else if response.StatusCode != http.StatusAccepted {
-		requestErrors.WithLabelValues("auth").Inc() // Increment error count for auth action
+	}
+
+	if response.StatusCode >= 400 {
+		requestErrors.WithLabelValues("auth").Inc()
 		log.WithFields(logrus.Fields{
 			"status": response.StatusCode,
 		}).Error("Error calling authentication service")
