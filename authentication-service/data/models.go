@@ -74,7 +74,14 @@ func (u *User) GetByEmail(email string) (*User, error) {
 // with the hash we have stored for a given user in the database. If the password
 // and hash match, we return true; otherwise, we return false.
 func (u *User) PasswordMatches(plainText string) (bool, error) {
-	err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(plainText))
+	hash := u.Password
+
+	// Normalize $2y$ to $2a$ for Go bcrypt compatibility
+	if len(hash) > 4 && hash[:4] == "$2y$" {
+		hash = "$2a$" + hash[4:]
+	}
+
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(plainText))
 	if err != nil {
 		switch {
 		case errors.Is(err, bcrypt.ErrMismatchedHashAndPassword):

@@ -3,6 +3,7 @@ package main
 import (
 	"authentication/api"
 	"authentication/data"
+	"context"
 	"database/sql"
 	"fmt"
 	"log"
@@ -10,6 +11,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/go-redis/redis/v8"
 	_ "github.com/jackc/pgconn"
 	_ "github.com/jackc/pgx/v4"
 	_ "github.com/jackc/pgx/v4/stdlib"
@@ -47,6 +49,7 @@ func main() {
 		DB:     conn,
 		Models: data.New(conn),
 		Logger: logger,
+		Redis:  initRedis(),
 	}
 
 	// Initialize Prometheus metrics
@@ -120,6 +123,22 @@ func openDB(dsn string) (*sql.DB, error) {
 	}
 
 	return db, nil
+}
+
+func initRedis() *redis.Client {
+	rdb := redis.NewClient(&redis.Options{
+		Addr:     "redis:6379", // assuming Redis service in Docker/K8s
+		Password: "",           // no password
+		DB:       0,
+	})
+
+	// Ping test
+	if err := rdb.Ping(context.Background()).Err(); err != nil {
+		log.Fatalf("Redis connection failed: %v", err)
+	}
+
+	logger.Info("Connected to Redis")
+	return rdb
 }
 
 func connectToDB() *sql.DB {

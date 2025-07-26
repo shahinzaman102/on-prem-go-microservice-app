@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: authentication-service
-          image: authentication-service:$IMAGE_TAG
+          image: redis-rate-limiting:2
           imagePullPolicy: Never
           resources:
             requests:
@@ -39,6 +39,16 @@ spec:
                 secretKeyRef:
                   name: postgres-secrets
                   key: POSTGRES_DB
+            - name: USER_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: user-secrets
+                  key: USER_EMAIL
+            - name: USER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: user-secrets
+                  key: USER_PASSWORD
           ports:
             - containerPort: 80
           livenessProbe:

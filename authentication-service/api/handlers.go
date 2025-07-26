@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -31,9 +32,22 @@ func (app *Config) Authenticate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Validate the user against the database
+	// --- RATE LIMIT CHECK ---
+	ctx := context.Background()
+	key := "login_attempts:" + requestPayload.Email
+	attempts, _ := app.Redis.Get(ctx, key).Int()
+	if attempts >= 5 {
+		app.Logger.Warnf("Rate limit exceeded for email %s", requestPayload.Email)
+		app.errorJSON(w, errors.New("too many failed login attempts, please wait 15 minutes"), http.StatusTooManyRequests)
+		return
+	}
+	// ------------------------
+
 	user, err := app.Models.User.GetByEmail(requestPayload.Email)
 	if err != nil {
+		app.Redis.Incr(ctx, key)
+		app.Redis.Expire(ctx, key, 15*time.Minute)
+
 		logger.WithError(err).Warn("Invalid credentials")
 		app.Metrics.ErrorCount.WithLabelValues(r.Method, "/authenticate").Inc()
 		app.errorJSON(w, errors.New("invalid credentials"), http.StatusBadRequest)
@@ -42,13 +56,18 @@ func (app *Config) Authenticate(w http.ResponseWriter, r *http.Request) {
 
 	valid, err := user.PasswordMatches(requestPayload.Password)
 	if err != nil || !valid {
+		app.Redis.Incr(ctx, key)
+		app.Redis.Expire(ctx, key, 15*time.Minute)
+
 		logger.Warn("Invalid password")
 		app.Metrics.ErrorCount.WithLabelValues(r.Method, "/authenticate").Inc()
 		app.errorJSON(w, errors.New("invalid credentials"), http.StatusBadRequest)
 		return
 	}
 
-	// Log authentication
+	// --- Success: Reset failed attempts ---
+	app.Redis.Del(ctx, key)
+
 	err = app.logRequest("authentication", fmt.Sprintf("%s logged in", user.Email))
 	if err != nil {
 		logger.WithError(err).Error("Failed to log authentication event")
@@ -57,10 +76,7 @@ func (app *Config) Authenticate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Log successful authentication
-	logger.WithFields(logrus.Fields{
-		"user_email": user.Email,
-	}).Info("User authenticated")
+	logger.WithField("user_email", user.Email).Info("User authenticated")
 
 	payload := jsonResponse{
 		Error:   false,
@@ -70,7 +86,6 @@ func (app *Config) Authenticate(w http.ResponseWriter, r *http.Request) {
 
 	app.WriteJSON(w, http.StatusAccepted, payload)
 
-	// Update Prometheus metrics
 	duration := time.Since(start).Seconds()
 	app.Metrics.RequestCount.WithLabelValues(r.Method, "/authenticate").Inc()
 	app.Metrics.RequestLatency.WithLabelValues(r.Method, "/authenticate").Observe(duration)
