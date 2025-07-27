@@ -13,7 +13,7 @@ RUN go mod download
 # Copy the source code into the container
 COPY cmd ./cmd
 COPY cmd/templates ./templates
-COPY internal/tracing ./tracing
+COPY internal ./internal
 
 # Build the Go app
 WORKDIR /app/cmd

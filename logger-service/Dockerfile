@@ -15,7 +15,7 @@ COPY api ./api
 COPY cmd ./cmd
 COPY data ./data
 COPY logs ./logs
-COPY internal/tracing ./tracing
+COPY internal ./internal
 
 # Build the Go app
 WORKDIR /app/cmd
