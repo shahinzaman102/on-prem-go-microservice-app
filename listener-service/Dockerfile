@@ -13,6 +13,7 @@ RUN go mod download
 # Copy the source code into the container
 COPY cmd ./cmd
 COPY event ./event
+COPY internal/tracing ./tracing
 
 # Build the Go app
 WORKDIR /app/cmd
