@@ -13,12 +13,7 @@ import (
 func (app *Config) Routes() http.Handler {
 	mux := chi.NewRouter()
 
-	// Traced routes
-	mux.Handle("/", otelhttp.NewHandler(http.HandlerFunc(app.Broker), "Broker"))
-	mux.Handle("/handle", otelhttp.NewHandler(http.HandlerFunc(app.HandleSubmission), "HandleSubmission"))
-	mux.Handle("/log-grpc", otelhttp.NewHandler(http.HandlerFunc(app.LogViaGRPC), "LogViaGRPC"))
-
-	// specify who is allowed to connect
+	// middleware registrations
 	mux.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"https://*", "http://*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
@@ -27,8 +22,12 @@ func (app *Config) Routes() http.Handler {
 		AllowCredentials: true,
 		MaxAge:           300,
 	}))
-
 	mux.Use(middleware.Heartbeat("/ping"))
+
+	// Now define routes
+	mux.Handle("/", otelhttp.NewHandler(http.HandlerFunc(app.Broker), "Broker"))
+	mux.Handle("/handle", otelhttp.NewHandler(http.HandlerFunc(app.HandleSubmission), "HandleSubmission"))
+	mux.Handle("/log-grpc", otelhttp.NewHandler(http.HandlerFunc(app.LogViaGRPC), "LogViaGRPC"))
 
 	// Prometheus metrics endpoint
 	mux.Handle("/metrics", promhttp.Handler())
