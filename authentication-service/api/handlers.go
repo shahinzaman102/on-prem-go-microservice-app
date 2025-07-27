@@ -10,10 +10,15 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 func (app *Config) Authenticate(w http.ResponseWriter, r *http.Request) {
 	start := time.Now()
+
+	ctx, span := otel.Tracer("authentication-service").Start(r.Context(), "AuthenticateHandler")
+	defer span.End()
 
 	logger := logrus.WithFields(logrus.Fields{
 		"method": r.Method,
@@ -32,8 +37,10 @@ func (app *Config) Authenticate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Add tracing attribute after payload is parsed
+	span.SetAttributes(attribute.String("user.email", requestPayload.Email))
+
 	// --- RATE LIMIT CHECK ---
-	ctx := context.Background()
 	key := "login_attempts:" + requestPayload.Email
 	attempts, _ := app.Redis.Get(ctx, key).Int()
 	if attempts >= 5 {
@@ -68,7 +75,7 @@ func (app *Config) Authenticate(w http.ResponseWriter, r *http.Request) {
 	// --- Success: Reset failed attempts ---
 	app.Redis.Del(ctx, key)
 
-	err = app.logRequest("authentication", fmt.Sprintf("%s logged in", user.Email))
+	err = app.logRequest(ctx, "authentication", fmt.Sprintf("%s logged in", user.Email))
 	if err != nil {
 		logger.WithError(err).Error("Failed to log authentication event")
 		app.Metrics.ErrorCount.WithLabelValues(r.Method, "/authenticate").Inc()
@@ -92,7 +99,7 @@ func (app *Config) Authenticate(w http.ResponseWriter, r *http.Request) {
 	logger.WithField("latency", duration).Info("Request completed")
 }
 
-func (app *Config) logRequest(name, data string) error {
+func (app *Config) logRequest(ctx context.Context, name, data string) error {
 	logger := logrus.WithFields(logrus.Fields{
 		"event": name,
 		"data":  data,

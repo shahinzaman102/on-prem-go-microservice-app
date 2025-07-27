@@ -16,6 +16,11 @@ import (
 	_ "github.com/jackc/pgx/v4"
 	_ "github.com/jackc/pgx/v4/stdlib"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+	"go.opentelemetry.io/otel/sdk/resource"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -95,6 +100,10 @@ func main() {
 
 	// Add /metrics endpoint
 	http.Handle("/metrics", promhttp.Handler())
+
+	// In main(), before starting the HTTP server
+	shutdown := initTracer()
+	defer shutdown()
 
 	// Start server
 	srv := &http.Server{
@@ -196,5 +205,39 @@ func connectToDB() *sql.DB {
 		}).Info("Retrying DB connection in 2 seconds...")
 		time.Sleep(2 * time.Second)
 		continue
+	}
+}
+
+func initTracer() func() {
+	ctx := context.Background()
+
+	// Configure OTLP HTTP exporter
+	exporter, err := otlptracehttp.New(ctx,
+		otlptracehttp.WithEndpoint("jaeger-collector.istio-system:4318"),
+		otlptracehttp.WithInsecure(),
+	)
+	if err != nil {
+		logger.WithError(err).Fatal("Failed to create OTLP exporter")
+	}
+
+	tp := sdktrace.NewTracerProvider(
+		sdktrace.WithBatcher(exporter),
+		sdktrace.WithResource(resource.NewWithAttributes(
+			semconv.SchemaURL,
+			semconv.ServiceName("authentication-service"),
+		)),
+	)
+
+	otel.SetTracerProvider(tp)
+
+	logger.Info("OpenTelemetry (OTLP) tracing initialized")
+
+	// Return shutdown function
+	return func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := tp.Shutdown(ctx); err != nil {
+			logger.WithError(err).Error("Error shutting down tracer provider")
+		}
 	}
 }

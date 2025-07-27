@@ -7,10 +7,16 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 func (app *Config) Routes() http.Handler {
 	mux := chi.NewRouter()
+
+	// Traced routes
+	mux.Handle("/", otelhttp.NewHandler(http.HandlerFunc(app.Broker), "Broker"))
+	mux.Handle("/handle", otelhttp.NewHandler(http.HandlerFunc(app.HandleSubmission), "HandleSubmission"))
+	mux.Handle("/log-grpc", otelhttp.NewHandler(http.HandlerFunc(app.LogViaGRPC), "LogViaGRPC"))
 
 	// specify who is allowed to connect
 	mux.Use(cors.Handler(cors.Options{
@@ -27,14 +33,9 @@ func (app *Config) Routes() http.Handler {
 	// Prometheus metrics endpoint
 	mux.Handle("/metrics", promhttp.Handler())
 
-	// Explicitly define health check routes inside Routes()
+	// Health check routes
 	mux.Get("/healthz", app.HealthzHandler)
 	mux.Get("/ready", app.ReadinessHandler)
-
-	// Application-specific routes
-	mux.Post("/", app.Broker)
-	mux.Post("/log-grpc", app.LogViaGRPC)
-	mux.Post("/handle", app.HandleSubmission)
 
 	return mux
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"mailer-service/api"
 	"net/http"
@@ -20,6 +21,17 @@ func main() {
 	// Initialize logger
 	app.InitializeLogger()
 
+	// Initialize OpenTelemetry Tracer
+	shutdown, err := api.InitTracer("mailer-service")
+	if err != nil {
+		app.Logger.Fatal("Failed to init tracer: ", err)
+	}
+	defer func() {
+		if err := shutdown(context.Background()); err != nil {
+			app.Logger.Error("Error shutting down tracer: ", err)
+		}
+	}()
+
 	// Expose Prometheus metrics endpoint
 	http.Handle("/metrics", promhttp.Handler())
 	go func() {
@@ -36,9 +48,9 @@ func main() {
 		Handler: app.Routes(),
 	}
 
-	err := srv.ListenAndServe()
+	err = srv.ListenAndServe()
 	if err != nil {
-		app.Logger.Panic("Error starting mail service:", err) // Use app.Logger.Panic for panic errors
+		app.Logger.Panic("Error starting mail service:", err)
 	}
 }
 

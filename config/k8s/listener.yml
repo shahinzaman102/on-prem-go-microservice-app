@@ -23,6 +23,9 @@ spec:
           limits:
             memory: "128Mi"
             cpu: "250m"
+        env:
+          - name: JAEGER_ENDPOINT
+            value: "http://jaeger:4318"
         ports:
           - containerPort: 80
         livenessProbe:

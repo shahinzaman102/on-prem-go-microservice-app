@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"listener/event"
+	"listener/internal/tracing"
 	"math"
 	"net/http"
 	"os"
@@ -44,6 +46,13 @@ func main() {
 	// Configure logrus for JSON output
 	log.SetFormatter(&logrus.JSONFormatter{})
 	log.SetOutput(os.Stdout)
+
+	// Initialize OpenTelemetry
+	shutdown, err := tracing.InitTracer(context.Background(), "listener-service")
+	if err != nil {
+		log.WithError(err).Fatal("Failed to initialize tracer")
+	}
+	defer shutdown(context.Background())
 
 	// Try to connect to RabbitMQ
 	rabbitConn, err := connect()

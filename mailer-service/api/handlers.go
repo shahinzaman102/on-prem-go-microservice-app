@@ -5,13 +5,20 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 )
 
 // SendMail is the handler for sending emails
 func (app *Config) SendMail(w http.ResponseWriter, r *http.Request) {
-	// Start timer to measure the duration of the email send request
+	// Start OpenTelemetry trace span
 	start := time.Now()
+	tracer := otel.Tracer("mailer-service")
+	_, span := tracer.Start(r.Context(), "SendMailHandler")
+	defer span.End()
 
+	// Define request payload
 	type mailMessage struct {
 		From    string `json:"from"`
 		To      string `json:"to"`
@@ -21,24 +28,33 @@ func (app *Config) SendMail(w http.ResponseWriter, r *http.Request) {
 
 	var requestPayload mailMessage
 
+	// Parse request body
 	err := app.readJSON(w, r, &requestPayload)
 	if err != nil {
-		// Use logrus logger
 		app.Logger.WithFields(logrus.Fields{
 			"error":  err.Error(),
 			"method": "SendMail",
 			"status": "failure",
 		}).Error("Failed to read JSON")
 
-		// Increment error counter for mail send attempt
+		// Trace error
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "Failed to parse JSON")
+
 		MailSendErrors.Inc()
 		MailSendAttempts.WithLabelValues("failure").Inc()
-		// Record the failure duration
 		MailSendDuration.WithLabelValues("failure").Observe(time.Since(start).Seconds())
 		app.errorJSON(w, err)
 		return
 	}
 
+	// Add trace attributes
+	span.SetAttributes(
+		attribute.String("email.to", requestPayload.To),
+		attribute.String("email.subject", requestPayload.Subject),
+	)
+
+	// Create message object
 	msg := Message{
 		From:    requestPayload.From,
 		To:      requestPayload.To,
@@ -46,29 +62,31 @@ func (app *Config) SendMail(w http.ResponseWriter, r *http.Request) {
 		Data:    requestPayload.Message,
 	}
 
+	// Send email
 	err = app.Mailer.SendSMTPMessage(msg)
 	if err != nil {
-		// Use logrus logger
 		app.Logger.WithFields(logrus.Fields{
 			"error":  err.Error(),
 			"method": "SendMail",
 			"status": "failure",
 		}).Error("Failed to send email")
 
-		// Increment error counter for mail send
+		// Trace error
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "SMTP send failed")
+
 		MailSendErrors.Inc()
 		MailSendAttempts.WithLabelValues("failure").Inc()
-		// Record the failure duration
 		MailSendDuration.WithLabelValues("failure").Observe(time.Since(start).Seconds())
 		app.errorJSON(w, err)
 		return
 	}
 
-	// Increment success counter for mail send
+	// Record successful metrics
 	MailSendAttempts.WithLabelValues("success").Inc()
-	// Record the success duration
 	MailSendDuration.WithLabelValues("success").Observe(time.Since(start).Seconds())
 
+	// Respond
 	payload := jsonResponse{
 		Error:   false,
 		Message: "sent to " + requestPayload.To,

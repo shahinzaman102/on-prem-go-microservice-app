@@ -2,6 +2,7 @@ package event
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel"
 )
 
 var (
@@ -137,16 +139,23 @@ func (consumer *Consumer) Listen(topics []string) error {
 			}
 
 			start := time.Now()
-			go handlePayload(payload, consumer.log)
-			duration := time.Since(start).Seconds()
-			RabbitMessageProcessingDuration.Observe(duration)
 
-			consumer.log.WithFields(logrus.Fields{
-				"message":  payload,
-				"duration": duration,
-			}).Info("Processed message")
+			go func(payload Payload) {
+				ctx, span := otel.Tracer("listener-service").Start(context.Background(), "ProcessMessage")
+				defer span.End()
 
-			RabbitMessagesProcessed.Inc()
+				handlePayload(ctx, payload, consumer.log)
+
+				duration := time.Since(start).Seconds()
+				RabbitMessageProcessingDuration.Observe(duration)
+				RabbitMessagesProcessed.Inc()
+
+				consumer.log.WithFields(logrus.Fields{
+					"message":  payload,
+					"duration": duration,
+				}).Info("Processed message")
+
+			}(payload)
 		}
 	}()
 
@@ -156,10 +165,10 @@ func (consumer *Consumer) Listen(topics []string) error {
 	return nil
 }
 
-func handlePayload(payload Payload, log *logrus.Logger) {
+func handlePayload(ctx context.Context, payload Payload, log *logrus.Logger) {
 	switch payload.Name {
 	case "log", "event":
-		err := logEvent(payload, log)
+		err := logEvent(ctx, payload, log)
 		if err != nil {
 			log.WithError(err).Error("Failed to log event")
 			RabbitMessageErrors.Inc()
@@ -169,12 +178,14 @@ func handlePayload(payload Payload, log *logrus.Logger) {
 	}
 }
 
-func logEvent(entry Payload, log *logrus.Logger) error {
+func logEvent(ctx context.Context, entry Payload, log *logrus.Logger) error {
+	_, span := otel.Tracer("listener-service").Start(ctx, "logEvent")
+	defer span.End()
+
 	jsonData, _ := json.Marshal(entry)
 
 	logServiceURL := "http://logger-service/log"
-
-	request, err := http.NewRequest("POST", logServiceURL, bytes.NewBuffer(jsonData))
+	request, err := http.NewRequestWithContext(ctx, "POST", logServiceURL, bytes.NewBuffer(jsonData))
 	if err != nil {
 		RabbitMessageErrors.Inc()
 		return err

@@ -8,10 +8,14 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 func (app *Config) Routes() http.Handler {
 	mux := chi.NewRouter()
+	mux.Use(middleware.RequestID)
+	mux.Use(middleware.RealIP)
+	mux.Use(otelhttp.NewMiddleware("authentication-service"))
 
 	// specify who is allowed to connect
 	mux.Use(cors.Handler(cors.Options{

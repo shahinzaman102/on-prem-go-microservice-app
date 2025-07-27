@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log-service/api"
 	"log-service/data"
+	"log-service/internal/tracing"
 	"net/http"
 	"net/rpc"
 	"time"
@@ -29,6 +30,14 @@ func main() {
 	// Initialize logger using the global Log instance from api package
 	api.InitLogger()  // Initialize the logger once at the start
 	logger := api.Log // Use the global logger
+
+	ctx := context.Background()
+
+	shutdown, err := tracing.InitTracer(ctx)
+	if err != nil {
+		logger.WithError(err).Fatal("Failed to initialize OpenTelemetry tracer")
+	}
+	defer shutdown(ctx)
 
 	// Log the application start
 	logger.WithField("service", "logger-service").Info("Starting logger service")

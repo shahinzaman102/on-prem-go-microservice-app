@@ -49,6 +49,9 @@ spec:
                 secretKeyRef:
                   name: user-secrets
                   key: USER_PASSWORD
+            # 🔍 OTEL config
+            - name: JAEGER_ENDPOINT
+              value: "http://jaeger:4318"
           ports:
             - containerPort: 80
           livenessProbe:

@@ -27,6 +27,8 @@ spec:
           - name: BROKER_URL
             value: "http://broker.microsvc.net"
             # value: "https://broker.microsvc.net"
+          - name: JAEGER_ENDPOINT
+            value: "http://jaeger:4318"
         ports:
           - containerPort: 8081
         livenessProbe:

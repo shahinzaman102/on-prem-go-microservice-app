@@ -1,8 +1,10 @@
 package main
 
 import (
+	"context"
 	"embed"
 	"fmt"
+	"frontend/internal/tracing"
 	"html/template"
 	"io"
 	"net/http"
@@ -13,6 +15,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var (
@@ -66,7 +71,20 @@ func init() {
 }
 
 func main() {
-	// Health check endpoints for liveness and readiness probes
+	ctx := context.Background()
+
+	// Initialize OpenTelemetry tracer
+	shutdown, err := tracing.InitTracer("front-end")
+	if err != nil {
+		log.WithError(err).Fatal("Failed to initialize tracer")
+	}
+	defer func() {
+		if err := shutdown(ctx); err != nil {
+			log.WithError(err).Error("Failed to shut down tracer")
+		}
+	}()
+
+	// Health check endpoints
 	http.HandleFunc("/healthz", healthz)
 	http.HandleFunc("/ready", ready)
 
@@ -77,10 +95,17 @@ func main() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
+		// Start a new span for tracing
+		var span trace.Span
+		ctx = r.Context()
+		tracer := otel.Tracer("front-end")
+		ctx, span = tracer.Start(ctx, "Handle /")
+		defer span.End()
+
 		// Measure request size
 		reqSize, _ := io.Copy(io.Discard, r.Body)
 
-		// Log request
+		// Log incoming request
 		log.WithFields(logrus.Fields{
 			"method":      r.Method,
 			"url":         r.URL.Path,
@@ -88,27 +113,35 @@ func main() {
 			"user_agent":  r.UserAgent(),
 		}).Info("Received request")
 
-		// Simulate serving the template
+		// Render the template
 		status := render(w, "test.page.gohtml")
 
-		// Measure response time
+		// Measure duration
 		duration := time.Since(start).Seconds()
 
-		// Record metrics
+		// Record Prometheus metrics
 		httpRequestsTotal.WithLabelValues(r.Method, strconv.Itoa(status), r.URL.Path).Inc()
 		httpRequestDuration.WithLabelValues(r.Method, strconv.Itoa(status), r.URL.Path).Observe(duration)
 		httpRequestSize.WithLabelValues(r.Method, r.URL.Path).Observe(float64(reqSize))
 
+		// Log success
 		log.WithFields(logrus.Fields{
 			"method":    r.Method,
 			"status":    status,
 			"duration":  duration,
 			"timestamp": time.Now(),
 		}).Info("Request handled successfully")
+
+		// Add attributes to the span
+		span.SetAttributes(
+			attribute.String("http.method", r.Method),
+			attribute.String("http.path", r.URL.Path),
+			attribute.Int("http.status_code", status),
+		)
 	})
 
 	log.Info("Starting front-end service on port 8081")
-	err := http.ListenAndServe(":8081", nil)
+	err = http.ListenAndServe(":8081", nil)
 	if err != nil {
 		log.WithError(err).Fatal("Failed to start server")
 	}

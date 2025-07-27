@@ -2,6 +2,8 @@ package main
 
 import (
 	"broker/api"
+	"broker/internal/tracing"
+	"context"
 	"fmt"
 	"math"
 	"net/http"
@@ -36,6 +38,12 @@ func main() {
 
 	// Start logging the application initialization
 	logger.Infof("Starting broker service on port %s", webPort)
+
+	shutdown, err := tracing.InitTracer(context.Background(), "broker-service")
+	if err != nil {
+		logger.WithError(err).Fatal("Failed to initialize tracer")
+	}
+	defer shutdown(context.Background()) // clean shutdown on exit
 
 	// Define HTTP server
 	srv := &http.Server{
