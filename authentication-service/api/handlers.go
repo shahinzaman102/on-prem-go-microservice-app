@@ -20,9 +20,11 @@ func (app *Config) Authenticate(w http.ResponseWriter, r *http.Request) {
 	ctx, span := otel.Tracer("authentication-service").Start(r.Context(), "AuthenticateHandler")
 	defer span.End()
 
+	traceID := span.SpanContext().TraceID().String()
 	logger := logrus.WithFields(logrus.Fields{
-		"method": r.Method,
-		"path":   r.URL.Path,
+		"method":   r.Method,
+		"path":     r.URL.Path,
+		"trace_id": traceID,
 	})
 
 	var requestPayload struct {

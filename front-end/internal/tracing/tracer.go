@@ -2,28 +2,28 @@ package tracing
 
 import (
 	"context"
+	"log"
 	"os"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.17.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
 )
 
-// InitTracer sets up OpenTelemetry with OTLP HTTP exporter
-func InitTracer(serviceName string) (func(context.Context) error, error) {
-	endpoint := os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
-	if endpoint == "" {
-		endpoint = "http://jaeger:4318" // Default for Jaeger OTLP/HTTP
-	}
-
-	exporter, err := otlptracehttp.New(context.Background(),
-		otlptracehttp.WithEndpoint(endpoint),
+func InitTracer(ctx context.Context, serviceName string) (func(context.Context) error, error) {
+	exporter, err := otlptracehttp.New(ctx,
+		otlptracehttp.WithEndpoint("jaeger:4318"),
 		otlptracehttp.WithInsecure(),
 	)
 	if err != nil {
 		return nil, err
+	}
+
+	env := os.Getenv("ENVIRONMENT")
+	if env == "" {
+		env = "development"
 	}
 
 	tp := sdktrace.NewTracerProvider(
@@ -31,10 +31,13 @@ func InitTracer(serviceName string) (func(context.Context) error, error) {
 		sdktrace.WithResource(resource.NewWithAttributes(
 			semconv.SchemaURL,
 			semconv.ServiceName(serviceName),
+			semconv.DeploymentEnvironment(env),
+			semconv.CloudRegion("eu-west-1"), // example: adjust as needed
 		)),
 	)
 
 	otel.SetTracerProvider(tp)
+	log.Println("✅ OpenTelemetry tracer initialized for", serviceName)
 
 	return tp.Shutdown, nil
 }

@@ -5,6 +5,7 @@ import (
 	"broker/internal/tracing"
 	"context"
 	"fmt"
+	"log"
 	"math"
 	"net/http"
 	"os"
@@ -37,24 +38,26 @@ func main() {
 	}
 
 	// Start logging the application initialization
-	logger.Infof("Starting broker service on port %s", webPort)
+	logger.Info("Starting broker service")
 
-	shutdown, err := tracing.InitTracer(context.Background(), "broker-service")
+	ctx := context.Background()
+
+	// Initialize OpenTelemetry
+	shutdown, err := tracing.InitTracer(ctx, "broker-service")
 	if err != nil {
 		logger.WithError(err).Fatal("Failed to initialize tracer")
 	}
-	defer shutdown(context.Background()) // clean shutdown on exit
+	defer shutdown(ctx)
 
-	// Define HTTP server
+	// Start server
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%s", webPort),
 		Handler: app.Routes(),
 	}
 
-	// Start the server and log if there's an error
-	err = srv.ListenAndServe()
-	if err != nil {
-		logger.WithError(err).Fatal("Server failed to start")
+	logger.Info("Starting server on port ", webPort)
+	if err := srv.ListenAndServe(); err != nil {
+		log.Panic(err)
 	}
 }
 

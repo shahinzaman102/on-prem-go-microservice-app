@@ -1,5 +1,5 @@
 # Step 1: Build the Go binary
-FROM golang:1.23.3-alpine AS builder
+FROM golang:1.24.4-alpine AS builder
 
 # Set the Current Working Directory inside the container
 WORKDIR /app

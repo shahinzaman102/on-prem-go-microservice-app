@@ -14,6 +14,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -21,9 +22,7 @@ import (
 var log = logrus.New()
 
 func init() {
-	// Set log format to JSON, which is suitable for structured logging
 	log.SetFormatter(&logrus.JSONFormatter{})
-	// Optionally, set log level
 	log.SetLevel(logrus.InfoLevel)
 }
 
@@ -79,7 +78,6 @@ func init() {
 	prometheus.MustRegister(requestsProcessed, requestLatency, requestErrors, rabbitFailures, grpcFailures, rpcFailures)
 }
 
-// RequestPayload describes the JSON that this service accepts as an HTTP Post request
 type RequestPayload struct {
 	Action    string      `json:"action"`
 	Auth      AuthPayload `json:"auth,omitempty"`
@@ -89,7 +87,6 @@ type RequestPayload struct {
 	Mail      MailPayload `json:"mail,omitempty"`
 }
 
-// MailPayload is the embedded type (in RequestPayload) that describes an email message to be sent
 type MailPayload struct {
 	From    string `json:"from"`
 	To      string `json:"to"`
@@ -97,54 +94,58 @@ type MailPayload struct {
 	Message string `json:"message"`
 }
 
-// AuthPayload is the embedded type (in RequestPayload) that describes an authentication request
 type AuthPayload struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
-// LogPayload is the embedded type (in RequestPayload) that describes a request to log something
 type LogPayload struct {
 	Name string `json:"name"`
 	Data string `json:"data"`
 }
 
-// Broker is a test handler, just to make sure we can hit the broker from a web client
+func getTraceID(r *http.Request) string {
+	return trace.SpanFromContext(r.Context()).SpanContext().TraceID().String()
+}
+
 func (app *Config) Broker(w http.ResponseWriter, r *http.Request) {
+	traceID := getTraceID(r)
+
 	payload := JsonResponse{
 		Error:   false,
 		Message: "Hit the broker",
 	}
 
-	log.Info("Broker hit successfully")
+	log.WithField("trace_id", traceID).Info("Broker hit successfully")
 	_ = app.WriteJSON(w, http.StatusOK, payload)
 }
 
-// HandleSubmission is the main point of entry into the broker. It accepts a JSON
-// payload and performs an action based on the value of "action" in that JSON.
 func (app *Config) HandleSubmission(w http.ResponseWriter, r *http.Request) {
-	var requestPayload RequestPayload
-	start := time.Now() // Start measuring time
+	traceID := getTraceID(r)
 
-	// Log the incoming request payload
+	var requestPayload RequestPayload
+	start := time.Now()
+
 	err := app.ReadJSON(w, r, &requestPayload)
 	if err != nil {
-		requestErrors.WithLabelValues(requestPayload.Action).Inc() // Increment error count for this action
-		log.WithFields(logrus.Fields{"action": requestPayload.Action, "error": err.Error()}).Error("Failed to read JSON payload")
+		requestErrors.WithLabelValues(requestPayload.Action).Inc()
+		log.WithFields(logrus.Fields{
+			"action":   requestPayload.Action,
+			"error":    err.Error(),
+			"trace_id": traceID,
+		}).Error("Failed to read JSON payload")
 		app.ErrorJSON(w, err)
 		return
 	}
 
-	// Log the request payload for debugging purposes
 	log.WithFields(logrus.Fields{
-		"action":  requestPayload.Action,
-		"payload": requestPayload,
+		"action":   requestPayload.Action,
+		"payload":  requestPayload,
+		"trace_id": traceID,
 	}).Info("Received request")
 
-	// Record request for Prometheus
 	requestsProcessed.WithLabelValues(requestPayload.Action).Inc()
 
-	// Use defer to record latency after processing
 	defer func() {
 		duration := time.Since(start).Seconds()
 		requestLatency.WithLabelValues(requestPayload.Action).Observe(duration)
@@ -153,45 +154,38 @@ func (app *Config) HandleSubmission(w http.ResponseWriter, r *http.Request) {
 			"action":   requestPayload.Action,
 			"duration": duration,
 			"status":   "success",
+			"trace_id": traceID,
 		}).Info("Request processed successfully")
 	}()
 
-	// Handle different actions based on the payload
 	switch requestPayload.Action {
 	case "auth":
-		app.authenticate(w, requestPayload.Auth)
+		app.authenticate(w, requestPayload.Auth, traceID)
 	case "logRabbit":
-		app.logEventViaRabbit(w, requestPayload.LogRabbit)
+		app.logEventViaRabbit(w, requestPayload.LogRabbit, traceID)
 	case "logRpc":
-		app.logItemViaRPC(w, requestPayload.LogRpc)
-	// case "logGrpc":
-	// 	app.LogViaGRPC(w, requestPayload.LogGrpc)
+		app.logItemViaRPC(w, requestPayload.LogRpc, traceID)
 	case "mail":
-		app.SendMail(w, requestPayload.Mail)
+		app.SendMail(w, requestPayload.Mail, traceID)
 	default:
-		requestErrors.WithLabelValues(requestPayload.Action).Inc() // Increment error count for unknown action
-		log.WithFields(logrus.Fields{"action": requestPayload.Action}).Error("Unknown action")
+		requestErrors.WithLabelValues(requestPayload.Action).Inc()
+		log.WithFields(logrus.Fields{"action": requestPayload.Action, "trace_id": traceID}).Error("Unknown action")
 		app.ErrorJSON(w, errors.New("unknown action"))
 	}
 }
 
-// authenticate calls the authentication microservice and sends back the appropriate response
-func (app *Config) authenticate(w http.ResponseWriter, a AuthPayload) {
-	// create some json we'll send to the auth microservice
+func (app *Config) authenticate(w http.ResponseWriter, a AuthPayload, traceID string) {
 	jsonData, _ := json.MarshalIndent(a, "", "\t")
 
-	// log the request
 	log.WithFields(logrus.Fields{
-		"email": a.Email,
+		"email":    a.Email,
+		"trace_id": traceID,
 	}).Info("Sending authentication request")
 
-	// call the service
 	request, err := http.NewRequest("POST", "http://authentication-service/authenticate", bytes.NewBuffer(jsonData))
 	if err != nil {
-		requestErrors.WithLabelValues("auth").Inc() // Increment error count for auth action
-		log.WithFields(logrus.Fields{
-			"error": err.Error(),
-		}).Error("Failed to create HTTP request")
+		requestErrors.WithLabelValues("auth").Inc()
+		log.WithFields(logrus.Fields{"error": err.Error(), "trace_id": traceID}).Error("Failed to create HTTP request")
 		app.ErrorJSON(w, err)
 		return
 	}
@@ -199,54 +193,43 @@ func (app *Config) authenticate(w http.ResponseWriter, a AuthPayload) {
 	client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
-		requestErrors.WithLabelValues("auth").Inc() // Increment error count for auth action
-		log.WithFields(logrus.Fields{
-			"error": err.Error(),
-		}).Error("Failed to call authentication service")
+		requestErrors.WithLabelValues("auth").Inc()
+		log.WithFields(logrus.Fields{"error": err.Error(), "trace_id": traceID}).Error("Failed to call authentication service")
 		app.ErrorJSON(w, err)
 		return
 	}
 	defer response.Body.Close()
 
-	// Log the response status code
 	log.WithFields(logrus.Fields{
 		"status_code": response.StatusCode,
+		"trace_id":    traceID,
 	}).Info("Received response from authentication service")
 
 	if response.StatusCode == http.StatusUnauthorized {
-		log.WithFields(logrus.Fields{
-			"status": response.StatusCode,
-		}).Warn("Invalid credentials")
+		log.WithField("trace_id", traceID).Warn("Invalid credentials")
 		app.ErrorJSON(w, errors.New("invalid credentials"))
 		return
 	}
 
 	if response.StatusCode >= 400 {
 		requestErrors.WithLabelValues("auth").Inc()
-		log.WithFields(logrus.Fields{
-			"status": response.StatusCode,
-		}).Error("Unexpected error from authentication service")
+		log.WithFields(logrus.Fields{"status": response.StatusCode, "trace_id": traceID}).Error("Auth service error")
 		app.ErrorJSON(w, fmt.Errorf("auth service error (status: %d)", response.StatusCode))
 		return
 	}
 
 	var jsonFromService JsonResponse
-
 	err = json.NewDecoder(response.Body).Decode(&jsonFromService)
 	if err != nil {
-		requestErrors.WithLabelValues("auth").Inc() // Increment error count for auth action
-		log.WithFields(logrus.Fields{
-			"error": err.Error(),
-		}).Error("Failed to decode response from authentication service")
+		requestErrors.WithLabelValues("auth").Inc()
+		log.WithFields(logrus.Fields{"error": err.Error(), "trace_id": traceID}).Error("Failed to decode auth response")
 		app.ErrorJSON(w, err)
 		return
 	}
 
 	if jsonFromService.Error {
-		requestErrors.WithLabelValues("auth").Inc() // Increment error count for auth action
-		log.WithFields(logrus.Fields{
-			"error": jsonFromService.Message,
-		}).Error("Authentication failed")
+		requestErrors.WithLabelValues("auth").Inc()
+		log.WithFields(logrus.Fields{"error": jsonFromService.Message, "trace_id": traceID}).Error("Authentication failed")
 		app.ErrorJSON(w, err, http.StatusUnauthorized)
 		return
 	}
@@ -256,27 +239,17 @@ func (app *Config) authenticate(w http.ResponseWriter, a AuthPayload) {
 	payload.Message = "Authenticated!"
 	payload.Data = jsonFromService.Data
 
-	log.WithFields(logrus.Fields{
-		"email": a.Email,
-	}).Info("Authentication successful")
-
+	log.WithField("trace_id", traceID).Info("Authentication successful")
 	app.WriteJSON(w, http.StatusAccepted, payload)
 }
 
-// SendMail sends email by calling the mail microservice
-func (app *Config) SendMail(w http.ResponseWriter, msg MailPayload) {
+func (app *Config) SendMail(w http.ResponseWriter, msg MailPayload, traceID string) {
 	jsonData, _ := json.MarshalIndent(msg, "", "\t")
 
-	// call the mail service
-	mailServiceURL := "http://mailer-service/send"
-
-	// post to mail service
-	request, err := http.NewRequest("POST", mailServiceURL, bytes.NewBuffer(jsonData))
+	request, err := http.NewRequest("POST", "http://mailer-service/send", bytes.NewBuffer(jsonData))
 	if err != nil {
-		requestErrors.WithLabelValues("mail").Inc() // Increment error count for mail action
-		log.WithFields(logrus.Fields{
-			"error": err.Error(),
-		}).Error("Failed to create mail request")
+		requestErrors.WithLabelValues("mail").Inc()
+		log.WithFields(logrus.Fields{"error": err.Error(), "trace_id": traceID}).Error("Failed to create mail request")
 		app.ErrorJSON(w, err)
 		return
 	}
@@ -286,31 +259,25 @@ func (app *Config) SendMail(w http.ResponseWriter, msg MailPayload) {
 	client := &http.Client{}
 	response, err := client.Do(request)
 	if err != nil {
-		requestErrors.WithLabelValues("mail").Inc() // Increment error count for mail action
-		log.WithFields(logrus.Fields{
-			"error": err.Error(),
-		}).Error("Failed to call mail service")
+		requestErrors.WithLabelValues("mail").Inc()
+		log.WithFields(logrus.Fields{"error": err.Error(), "trace_id": traceID}).Error("Failed to call mail service")
 		app.ErrorJSON(w, err)
 		return
 	}
 	defer response.Body.Close()
 
-	// Log the response status code
 	log.WithFields(logrus.Fields{
 		"status_code": response.StatusCode,
-	}).Info("Received response from mail service")
+		"trace_id":    traceID,
+	}).Info("Mail service response received")
 
-	// make sure we get back the right status code
 	if response.StatusCode != http.StatusAccepted {
-		requestErrors.WithLabelValues("mail").Inc() // Increment error count for mail action
-		log.WithFields(logrus.Fields{
-			"status_code": response.StatusCode,
-		}).Error("Error calling mail service")
+		requestErrors.WithLabelValues("mail").Inc()
+		log.WithFields(logrus.Fields{"status_code": response.StatusCode, "trace_id": traceID}).Error("Error from mail service")
 		app.ErrorJSON(w, errors.New("error calling mail service"))
 		return
 	}
 
-	// send back json
 	var payload JsonResponse
 	payload.Error = false
 	payload.Message = "Message sent to " + msg.To
@@ -318,20 +285,20 @@ func (app *Config) SendMail(w http.ResponseWriter, msg MailPayload) {
 	app.WriteJSON(w, http.StatusAccepted, payload)
 }
 
-// logEventViaRabbit logs an event using the logger-service. It makes the call by pushing the data to RabbitMQ.
-func (app *Config) logEventViaRabbit(w http.ResponseWriter, l LogPayload) {
+func (app *Config) logEventViaRabbit(w http.ResponseWriter, l LogPayload, traceID string) {
 	err := app.pushToQueue(l.Name, l.Data)
 	if err != nil {
 		rabbitFailures.Inc()
-		requestErrors.WithLabelValues("logRabbit").Inc() // Increment error count for logRabbit action
-		log.WithFields(logrus.Fields{"name": l.Name, "data": l.Data, "error": err.Error()}).Error("Failed to push event to RabbitMQ")
+		requestErrors.WithLabelValues("logRabbit").Inc()
+		log.WithFields(logrus.Fields{"name": l.Name, "data": l.Data, "error": err.Error(), "trace_id": traceID}).Error("Failed to push event to RabbitMQ")
 		app.ErrorJSON(w, err)
 		return
 	}
 
 	log.WithFields(logrus.Fields{
-		"name": l.Name,
-		"data": l.Data,
+		"name":     l.Name,
+		"data":     l.Data,
+		"trace_id": traceID,
 	}).Info("Event logged via RabbitMQ")
 
 	var payload JsonResponse
@@ -370,25 +337,23 @@ type RPCPayload struct {
 	Data string
 }
 
-// logItemViaRPC logs an item by making an RPC call to the logger microservice
-func (app *Config) logItemViaRPC(w http.ResponseWriter, l LogPayload) {
+func (app *Config) logItemViaRPC(w http.ResponseWriter, l LogPayload, traceID string) {
 	client, err := rpc.Dial("tcp", "logger-service:5001")
 	if err != nil {
 		rpcFailures.Inc()
-		requestErrors.WithLabelValues("logRpc").Inc() // Increment error count for logRpc action
-		log.WithFields(logrus.Fields{"error": err.Error()}).Error("Failed to connect to RPC server")
+		requestErrors.WithLabelValues("logRpc").Inc()
+		log.WithFields(logrus.Fields{"error": err.Error(), "trace_id": traceID}).Error("Failed to connect to RPC server")
 		app.ErrorJSON(w, err)
 		return
 	}
 
-	// Type conversion
 	rpcPayload := RPCPayload(l)
 
 	var result string
 	if err := client.Call("RPCServer.LogInfo", rpcPayload, &result); err != nil {
 		rpcFailures.Inc()
-		requestErrors.WithLabelValues("logRpc").Inc() // Increment error count for logRpc action
-		log.WithFields(logrus.Fields{"error": err.Error()}).Error("Failed to log via RPC")
+		requestErrors.WithLabelValues("logRpc").Inc()
+		log.WithFields(logrus.Fields{"error": err.Error(), "trace_id": traceID}).Error("RPC log failure")
 		app.ErrorJSON(w, err)
 		return
 	}
@@ -402,35 +367,31 @@ func (app *Config) logItemViaRPC(w http.ResponseWriter, l LogPayload) {
 }
 
 func (app *Config) LogViaGRPC(w http.ResponseWriter, r *http.Request) {
-	var requestPayload RequestPayload
+	traceID := getTraceID(r)
 
-	// Read the incoming JSON payload
+	var requestPayload RequestPayload
 	err := app.ReadJSON(w, r, &requestPayload)
 	if err != nil {
-		// Increment error count for logGrpc action
 		grpcFailures.Inc()
 		requestErrors.WithLabelValues("logGrpc").Inc()
-		log.WithFields(logrus.Fields{"error": err.Error()}).Error("Failed to read gRPC request")
+		log.WithFields(logrus.Fields{"error": err.Error(), "trace_id": traceID}).Error("Failed to read gRPC request")
 		app.ErrorJSON(w, err)
 		return
 	}
 
-	// Establish a gRPC connection using the new client approach
 	conn, err := grpc.NewClient(
 		"logger-service:50001",
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	if err != nil {
-		// Increment error count for logGrpc action
 		grpcFailures.Inc()
 		requestErrors.WithLabelValues("logGrpc").Inc()
-		log.WithFields(logrus.Fields{"error": err.Error()}).Error("Failed to connect to gRPC server")
+		log.WithFields(logrus.Fields{"error": err.Error(), "trace_id": traceID}).Error("Failed to connect to gRPC server")
 		app.ErrorJSON(w, err)
 		return
 	}
 	defer conn.Close()
 
-	// Create the client and call WriteLog
 	c := logs.NewLogServiceClient(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
@@ -442,15 +403,13 @@ func (app *Config) LogViaGRPC(w http.ResponseWriter, r *http.Request) {
 		},
 	})
 	if err != nil {
-		// Increment error count for logGrpc action
 		grpcFailures.Inc()
 		requestErrors.WithLabelValues("logGrpc").Inc()
-		log.WithFields(logrus.Fields{"error": err.Error()}).Error("Failed to send log via gRPC")
+		log.WithFields(logrus.Fields{"error": err.Error(), "trace_id": traceID}).Error("Failed to send log via gRPC")
 		app.ErrorJSON(w, err)
 		return
 	}
 
-	// Success response
 	var payload JsonResponse
 	payload.Error = false
 	payload.Message = "Processed payload via gRPC"

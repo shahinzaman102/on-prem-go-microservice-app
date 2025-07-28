@@ -1,5 +1,5 @@
 # Step 1: Build the Go binary
-FROM golang:1.23.3-alpine AS builder
+FROM golang:1.24.4-alpine AS builder
 
 # Set the Current Working Directory inside the container
 WORKDIR /app
@@ -14,6 +14,7 @@ RUN go mod download
 COPY api ./api
 COPY cmd ./cmd
 COPY data ./data
+COPY internal ./internal
 
 # Build the Go app
 WORKDIR /app/cmd

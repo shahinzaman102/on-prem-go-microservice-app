@@ -13,6 +13,8 @@ import (
 func (app *Config) Routes() http.Handler {
 	mux := chi.NewRouter()
 
+	mux.Use(otelhttp.NewMiddleware("broker-service"))
+
 	// middleware registrations
 	mux.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"https://*", "http://*"},
@@ -24,10 +26,9 @@ func (app *Config) Routes() http.Handler {
 	}))
 	mux.Use(middleware.Heartbeat("/ping"))
 
-	// Now define routes
-	mux.Handle("/", otelhttp.NewHandler(http.HandlerFunc(app.Broker), "Broker"))
-	mux.Handle("/handle", otelhttp.NewHandler(http.HandlerFunc(app.HandleSubmission), "HandleSubmission"))
-	mux.Handle("/log-grpc", otelhttp.NewHandler(http.HandlerFunc(app.LogViaGRPC), "LogViaGRPC"))
+	mux.Handle("/", http.HandlerFunc(app.Broker))
+	mux.Handle("/handle", http.HandlerFunc(app.HandleSubmission))
+	mux.Handle("/log-grpc", http.HandlerFunc(app.LogViaGRPC))
 
 	// Prometheus metrics endpoint
 	mux.Handle("/metrics", promhttp.Handler())

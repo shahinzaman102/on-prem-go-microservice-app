@@ -15,6 +15,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -58,12 +59,10 @@ var (
 )
 
 func init() {
-	// Configure logger
 	log.SetFormatter(&logrus.JSONFormatter{})
 	log.SetOutput(os.Stdout)
 	log.SetLevel(logrus.InfoLevel)
 
-	// Register metrics with Prometheus
 	prometheus.MustRegister(httpRequestsTotal)
 	prometheus.MustRegister(httpRequestDuration)
 	prometheus.MustRegister(httpRequestSize)
@@ -73,39 +72,25 @@ func init() {
 func main() {
 	ctx := context.Background()
 
-	// Initialize OpenTelemetry tracer
-	shutdown, err := tracing.InitTracer("front-end")
+	// Initialize tracing
+	shutdown, err := tracing.InitTracer(ctx, "front-end")
 	if err != nil {
-		log.WithError(err).Fatal("Failed to initialize tracer")
+		log.Panic(err)
 	}
-	defer func() {
-		if err := shutdown(ctx); err != nil {
-			log.WithError(err).Error("Failed to shut down tracer")
-		}
-	}()
+	defer shutdown(ctx)
 
-	// Health check endpoints
-	http.HandleFunc("/healthz", healthz)
-	http.HandleFunc("/ready", ready)
-
-	// Prometheus metrics endpoint
+	// Register HTTP routes with otelhttp instrumentation
+	http.Handle("/healthz", otelhttp.NewHandler(http.HandlerFunc(healthz), "healthz"))
+	http.Handle("/ready", otelhttp.NewHandler(http.HandlerFunc(ready), "ready"))
 	http.Handle("/metrics", promhttp.Handler())
 
-	// Main app handler
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	http.Handle("/", otelhttp.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
+		ctx := r.Context()
+		span := trace.SpanFromContext(ctx)
 
-		// Start a new span for tracing
-		var span trace.Span
-		ctx = r.Context()
-		tracer := otel.Tracer("front-end")
-		ctx, span = tracer.Start(ctx, "Handle /")
-		defer span.End()
-
-		// Measure request size
 		reqSize, _ := io.Copy(io.Discard, r.Body)
 
-		// Log incoming request
 		log.WithFields(logrus.Fields{
 			"method":      r.Method,
 			"url":         r.URL.Path,
@@ -113,18 +98,16 @@ func main() {
 			"user_agent":  r.UserAgent(),
 		}).Info("Received request")
 
-		// Render the template
-		status := render(w, "test.page.gohtml")
+		span.AddEvent("render.started")
 
-		// Measure duration
+		status := render(ctx, w, "test.page.gohtml")
+
 		duration := time.Since(start).Seconds()
 
-		// Record Prometheus metrics
 		httpRequestsTotal.WithLabelValues(r.Method, strconv.Itoa(status), r.URL.Path).Inc()
 		httpRequestDuration.WithLabelValues(r.Method, strconv.Itoa(status), r.URL.Path).Observe(duration)
 		httpRequestSize.WithLabelValues(r.Method, r.URL.Path).Observe(float64(reqSize))
 
-		// Log success
 		log.WithFields(logrus.Fields{
 			"method":    r.Method,
 			"status":    status,
@@ -132,49 +115,44 @@ func main() {
 			"timestamp": time.Now(),
 		}).Info("Request handled successfully")
 
-		// Add attributes to the span
 		span.SetAttributes(
 			attribute.String("http.method", r.Method),
 			attribute.String("http.path", r.URL.Path),
 			attribute.Int("http.status_code", status),
 		)
-	})
+	}), "Handle /"))
 
 	log.Info("Starting front-end service on port 8081")
-	err = http.ListenAndServe(":8081", nil)
-	if err != nil {
+	if err := http.ListenAndServe(":8081", nil); err != nil {
 		log.WithError(err).Fatal("Failed to start server")
 	}
 }
 
-// Healthz (Liveness) endpoint
 func healthz(w http.ResponseWriter, r *http.Request) {
-	// Here we return a 200 OK if the service is alive
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("OK"))
 	log.Info("Liveness probe passed: /healthz")
 }
 
-// Ready (Readiness) endpoint
 func ready(w http.ResponseWriter, r *http.Request) {
-	// Here we return a 200 OK if the service is ready to serve traffic
-	// You could add additional checks (like DB connection or any external services) if needed
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("OK"))
 	log.Info("Readiness probe passed: /ready")
 }
 
-// Template cache
 var tc = make(map[string]*template.Template)
 
 //go:embed templates
 var templateFS embed.FS
 
-func render(w http.ResponseWriter, t string) int {
+func render(ctx context.Context, w http.ResponseWriter, t string) int {
 	var tmpl *template.Template
 	var err error
 
-	// Check template cache
+	tr := otel.Tracer("front-end")
+	_, span := tr.Start(ctx, "RenderTemplate:"+t)
+	defer span.End()
+
 	if _, exists := tc[t]; !exists {
 		log.WithField("template", t).Info("Parsing and caching template")
 		err = createTemplateCache(t)
@@ -194,7 +172,6 @@ func render(w http.ResponseWriter, t string) int {
 		BrokerURL: os.Getenv("BROKER_URL"),
 	}
 
-	// Capture response size
 	rec := &responseRecorder{ResponseWriter: w}
 	if err := tmpl.Execute(rec, data); err != nil {
 		log.WithError(err).Error("Failed to execute template")
@@ -202,13 +179,10 @@ func render(w http.ResponseWriter, t string) int {
 		return http.StatusInternalServerError
 	}
 
-	// Measure response size
 	httpResponseSize.WithLabelValues("GET", strconv.Itoa(http.StatusOK), t).Observe(float64(rec.size))
-
 	return http.StatusOK
 }
 
-// Create template cache
 func createTemplateCache(t string) error {
 	templates := []string{
 		fmt.Sprintf("templates/%s", t),
@@ -227,7 +201,6 @@ func createTemplateCache(t string) error {
 	return nil
 }
 
-// Response recorder to measure response size
 type responseRecorder struct {
 	http.ResponseWriter
 	size int

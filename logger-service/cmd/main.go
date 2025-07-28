@@ -12,6 +12,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.opentelemetry.io/otel"
 )
 
 const (
@@ -27,33 +28,36 @@ type Config struct {
 }
 
 func main() {
-	// Initialize logger using the global Log instance from api package
-	api.InitLogger()  // Initialize the logger once at the start
-	logger := api.Log // Use the global logger
+	api.InitLogger()
+	logger := api.Log
 
 	ctx := context.Background()
 
-	shutdown, err := tracing.InitTracer(ctx)
+	// Initialize tracing
+	shutdown, err := tracing.InitTracer(ctx, "logger-service")
 	if err != nil {
-		logger.WithError(err).Fatal("Failed to initialize OpenTelemetry tracer")
+		logger.WithError(err).Fatal("Failed to initialize tracer")
 	}
 	defer shutdown(ctx)
 
-	// Log the application start
+	tracer := otel.Tracer("logger-service")
+	ctx, span := tracer.Start(ctx, "main")
+	defer span.End()
+
 	logger.WithField("service", "logger-service").Info("Starting logger service")
 
-	// Use the new ConnectToMongo function from the api package
+	// Trace MongoDB connection
+	ctx, mongoSpan := tracer.Start(ctx, "connect_to_mongodb")
 	mongoClient, err := api.ConnectToMongo(mongoURL)
+	mongoSpan.End()
 	if err != nil {
 		logger.WithError(err).Fatal("Failed to connect to MongoDB")
 	}
 	client = mongoClient
 
-	// Create a context in order to disconnect
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	// Close MongoDB connection
 	defer func() {
 		if err = client.Disconnect(ctx); err != nil {
 			logger.WithError(err).Error("Error disconnecting from MongoDB")
@@ -68,7 +72,7 @@ func main() {
 		Logger: logger,
 	}
 
-	// Expose Prometheus metrics endpoint
+	// Prometheus metrics
 	http.Handle("/metrics", promhttp.Handler())
 	go func() {
 		logger.Info("Starting Prometheus metrics server on :8082")
@@ -77,23 +81,27 @@ func main() {
 		}
 	}()
 
-	// Register the gRPC Server
+	// Trace RPC server setup
+	ctx, rpcSpan := tracer.Start(ctx, "register_rpc_server")
 	err = rpc.Register(&api.RPCServer{Config: &app})
+	rpcSpan.End()
 	if err != nil {
 		logger.WithError(err).Fatal("Failed to register RPC server")
 	}
+
 	go app.RpcListen()
 	go app.GRPCListen()
 
-	// Start web server
+	// Trace web server startup
+	ctx, srvSpan := tracer.Start(ctx, "start_http_server")
 	logger.WithField("port", webPort).Info("Starting web server")
 	srv := &http.Server{
 		Addr:    fmt.Sprintf(":%s", webPort),
 		Handler: app.Routes(),
 	}
+	srvSpan.End()
 
-	err = srv.ListenAndServe()
-	if err != nil {
+	if err := srv.ListenAndServe(); err != nil {
 		logger.WithError(err).Fatal("Web server encountered a fatal error")
 	}
 }

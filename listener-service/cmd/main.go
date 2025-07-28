@@ -13,6 +13,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	amqp "github.com/rabbitmq/amqp091-go"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 var (
@@ -34,83 +36,82 @@ var (
 )
 
 func init() {
-	// Register the metrics with Prometheus
 	prometheus.MustRegister(RabbitConnectionAttempts)
 	prometheus.MustRegister(RabbitConnectionErrors)
 }
 
 func main() {
-	// Start HTTP server for Prometheus metrics
+	// Start metrics server
 	go startMetricsServer()
 
-	// Configure logrus for JSON output
 	log.SetFormatter(&logrus.JSONFormatter{})
 	log.SetOutput(os.Stdout)
 
-	// Initialize OpenTelemetry
-	shutdown, err := tracing.InitTracer(context.Background(), "listener-service")
+	ctx := context.Background()
+
+	// Tracing setup
+	shutdown, err := tracing.InitTracer(ctx, "listener-service")
 	if err != nil {
 		log.WithError(err).Fatal("Failed to initialize tracer")
 	}
-	defer shutdown(context.Background())
+	defer shutdown(ctx)
 
-	// Try to connect to RabbitMQ
-	rabbitConn, err := connect()
+	tracer := otel.Tracer("listener-service")
+	ctx, span := tracer.Start(ctx, "main")
+	defer span.End()
+
+	// Connect to RabbitMQ with tracing
+	rabbitConn, err := connect(ctx)
 	if err != nil {
 		log.WithError(err).Error("Failed to connect to RabbitMQ")
 		os.Exit(1)
 	}
 	defer rabbitConn.Close()
 
-	// Expose readiness probe
-	http.HandleFunc("/healthz", healthz)         // Liveness Probe
-	http.HandleFunc("/ready", ready(rabbitConn)) // Readiness Probe
+	http.HandleFunc("/healthz", healthz)
+	http.HandleFunc("/ready", ready(rabbitConn))
 
 	log.Info("Listening for and consuming RabbitMQ messages...")
 
-	// Create consumer
+	// Trace consumer creation
+	ctx, consumerSpan := tracer.Start(ctx, "create_consumer")
 	consumer, err := event.NewConsumer(rabbitConn, log)
+	consumerSpan.End()
 	if err != nil {
 		log.WithError(err).Fatal("Failed to create RabbitMQ consumer")
 	}
 
-	// Watch the queue and consume events
+	// Trace message consumption
+	ctx, listenSpan := tracer.Start(ctx, "consume_events")
 	err = consumer.Listen([]string{"log.INFO", "log.WARNING", "log.ERROR"})
+	listenSpan.End()
 	if err != nil {
 		log.WithError(err).Error("Error while consuming messages")
 	}
 }
 
-// startMetricsServer launches an HTTP server to expose metrics
 func startMetricsServer() {
 	http.Handle("/metrics", promhttp.Handler())
-	addr := ":80" // Ensure this matches the port in Kubernetes config
+	addr := ":80"
 	log.Infof("Starting metrics server on %s", addr)
 	if err := http.ListenAndServe(addr, nil); err != nil {
 		log.Fatalf("Error starting metrics server: %v", err)
 	}
 }
 
-// healthz is the Liveness Probe endpoint
 func healthz(w http.ResponseWriter, r *http.Request) {
-	// Here we return a 200 OK if the service is alive
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("OK"))
 	log.Info("Liveness probe passed: /healthz")
 }
 
-// ready is the Readiness Probe endpoint
 func ready(rabbitConn *amqp.Connection) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Check if RabbitMQ is connected
 		if rabbitConn.IsClosed() {
-			// If RabbitMQ is not connected, return a 500 status indicating not ready
 			http.Error(w, "RabbitMQ not connected", http.StatusServiceUnavailable)
 			log.Warn("Readiness probe failed: RabbitMQ is not connected")
 			return
 		}
-
-		// If RabbitMQ is connected, return 200 OK indicating readiness
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 		log.Info("Readiness probe passed: /ready")
@@ -118,16 +119,20 @@ func ready(rabbitConn *amqp.Connection) http.HandlerFunc {
 }
 
 // connect handles RabbitMQ connection with retries
-func connect() (*amqp.Connection, error) {
+func connect(ctx context.Context) (*amqp.Connection, error) {
 	var counts int64
 	var backOff = 1 * time.Second
 	var connection *amqp.Connection
 
+	tracer := otel.Tracer("listener-service")
+	ctx, span := tracer.Start(ctx, "connect_to_rabbitmq")
+	defer span.End()
+
 	for {
-		RabbitConnectionAttempts.Inc() // Increment connection attempt counter
+		RabbitConnectionAttempts.Inc()
 		c, err := amqp.Dial("amqp://guest:guest@rabbitmq")
 		if err != nil {
-			RabbitConnectionErrors.Inc() // Increment connection error counter
+			RabbitConnectionErrors.Inc()
 			log.WithError(err).Warn("RabbitMQ not yet ready...")
 			counts++
 		} else {
@@ -142,6 +147,7 @@ func connect() (*amqp.Connection, error) {
 		}
 
 		backOff = time.Duration(math.Pow(float64(counts), 2)) * time.Second
+		span.SetAttributes(attribute.Int64("retry_attempts", counts))
 		log.WithField("backOff", backOff).Info("Backing off before retry")
 		time.Sleep(backOff)
 		continue
