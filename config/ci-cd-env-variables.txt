@@ -28,16 +28,23 @@ POSTGRES_USER : postgres
 USER_EMAIL : admin@example.com
 
 USER_PASSWORD : use the "Base64 encode" form of the below password : 
-				$2a$12$1zGLuYDDNvATh4RA4avbKuheAMpb1svexSzrQm7up.bnpwQHs0jNe
+				$2a$12$VRLXlUBh37GbVTHGg2O5mOGnyrIBoj9h9g5ENOMQ8yut8sQO1BNcC
+				
+				Note: 
+				- This is the bcrypt-hashed form of the password: admin123.
+				  The original password admin123 is used in the application to auto-fill the 
+				  login form and trigger authentication when the "Test Auth" button is clicked.
+				- We got this bcrypt-hashed form of the password: admin123 using this command: 
+					htpasswd -nbBC 12 "" "admin123" | sed 's/$2y/$2a/'
 
 To encode the "USER_PASSWORD" in Base64 :
 
 	- In Terminal 🡪 
 
-		echo -n '$2a$12$1zGLuYDDNvATh4RA4avbKuheAMpb1svexSzrQm7up.bnpwQHs0jNe' | base64
+		echo -n '$2a$12$VRLXlUBh37GbVTHGg2O5mOGnyrIBoj9h9g5ENOMQ8yut8sQO1BNcC' | base64
 
 	- We’ll get something like in output 🡪
 
-		JDJhJDEyJDF6R0x1WURETnZBVGg0UkE0YXZiS3VoZUFNcGIxc3ZleFN6clFtN3VwLmJucHdRSHMwak5l
+		JDJhJDEyJFZSTFhsVUJoMzdHYlZUSEdnMk81bU9HbnlySUJvajloOWc1RU5PTVE4eXV0OHNRTzFCTmND
 	
 	- Then, Set this "output" as the "Value" for the "Key: USER_PASSWORD" in CI/CD.
